@@ -389,9 +389,38 @@ const App = {
                 e.preventDefault();
                 const page = item.dataset.page;
                 this.navigate(page);
-            });
+                init() {
+    // Set tanggal default
+    document.getElementById('upload-date').valueAsDate = new Date();
+    
+    // Auth listener
+    auth.onAuthStateChanged(user => {
+        this.currentUser = user;
+        this.updateUIBasedOnAuth();
+    });
+
+    // Load sekolah ke dropdown
+    this.loadSchools();
+
+    // Theme toggle
+    this.initTheme();
+
+    // Mobile menu
+    this.initMobileMenu();
+
+    // Login slider (TAMBAHKAN INI)
+    this.initLoginSlider();
+
+    // Nav menu click
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const page = item.dataset.page;
+            this.navigate(page);
         });
-    },
+    });
+},
+    
 // ========== LOGIN SLIDER ==========
 initLoginSlider() {
     const slides = document.querySelectorAll('.slide');
