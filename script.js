@@ -17,7 +17,7 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 
 // ============================================
-// 2. DATA 334 SEKOLAH
+// 2. DATA 334 SEKOLAH KABUPATEN ENDE
 // ============================================
 const schoolsData = [
     {"name": "SD GMIT ENDE 4", "kecamatan": "Ende Utara"},
@@ -357,123 +357,34 @@ const schoolsData = [
 ];
 
 // ============================================
-// 3. LOGIKA APLIKASI
+// 3. LOGIKA APLIKASI UTAMA
 // ============================================
 const App = {
     currentUser: null,
     selectedPhotos: [],
     debounceTimer: null,
+    slideInterval: null,
+    currentSlide: 0,
 
+    // ========== INISIALISASI ==========
     init() {
-        // Set tanggal default
         document.getElementById('upload-date').valueAsDate = new Date();
         
-        // Auth listener
         auth.onAuthStateChanged(user => {
             this.currentUser = user;
             this.updateUIBasedOnAuth();
         });
 
-        // Load sekolah ke dropdown
         this.loadSchools();
-
-        // Theme toggle
         this.initTheme();
-
-        // Mobile menu
         this.initMobileMenu();
-
-        // Nav menu click
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                const page = item.dataset.page;
-                this.navigate(page);
-                init() {
-    // Set tanggal default
-    document.getElementById('upload-date').valueAsDate = new Date();
-    
-    // Auth listener
-    auth.onAuthStateChanged(user => {
-        this.currentUser = user;
-        this.updateUIBasedOnAuth();
-    });
-
-    // Load sekolah ke dropdown
-    this.loadSchools();
-
-    // Theme toggle
-    this.initTheme();
-
-    // Mobile menu
-    this.initMobileMenu();
-
-    // Login slider (TAMBAHKAN INI)
-    this.initLoginSlider();
-
-    // Nav menu click
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-            e.preventDefault();
-            const page = item.dataset.page;
-            this.navigate(page);
-        });
-    });
-},
-    
-// ========== LOGIN SLIDER ==========
-initLoginSlider() {
-    const slides = document.querySelectorAll('.slide');
-    const dots = document.querySelectorAll('.dot');
-    if (slides.length === 0) return;
-
-    let currentIndex = 0;
-    let slideInterval;
-
-    const goToSlide = (index) => {
-        slides.forEach(s => s.classList.remove('active'));
-        dots.forEach(d => d.classList.remove('active'));
+        this.initLoginSlider();
+        this.initNavMenu();
         
-        slides[index].classList.add('active');
-        dots[index].classList.add('active');
-        currentIndex = index;
-    };
+        console.log('✅ Aplikasi Galeri SD Ende berhasil diinisialisasi');
+    },
 
-    const nextSlide = () => {
-        const next = (currentIndex + 1) % slides.length;
-        goToSlide(next);
-    };
-
-    // Auto slide setiap 5 detik
-    const startSlide = () => {
-        slideInterval = setInterval(nextSlide, 5000);
-    };
-
-    const stopSlide = () => {
-        clearInterval(slideInterval);
-    };
-
-    // Klik dot untuk pindah slide
-    dots.forEach((dot, index) => {
-        dot.addEventListener('click', () => {
-            stopSlide();
-            goToSlide(index);
-            startSlide();
-        });
-    });
-
-    // Mulai slider
-    startSlide();
-
-    // Pause saat user hover (opsional)
-    const visual = document.querySelector('.login-visual');
-    if (visual) {
-        visual.addEventListener('mouseenter', stopSlide);
-        visual.addEventListener('mouseleave', startSlide);
-    }
-},
-    
-    // ========== THEME ==========
+    // ========== THEME TOGGLE ==========
     initTheme() {
         const saved = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-theme', saved);
@@ -490,19 +401,33 @@ initLoginSlider() {
 
     updateThemeIcon(theme) {
         const icon = document.querySelector('#theme-toggle i');
-        icon.className = theme === 'light' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+        if (icon) {
+            icon.className = theme === 'light' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+        }
     },
 
     // ========== MOBILE MENU ==========
     initMobileMenu() {
         const toggle = document.getElementById('mobile-toggle');
         const menu = document.getElementById('nav-menu');
-        toggle.addEventListener('click', () => {
-            menu.classList.toggle('active');
-        });
+        if (toggle && menu) {
+            toggle.addEventListener('click', () => {
+                menu.classList.toggle('active');
+            });
+        }
     },
 
     // ========== NAVIGATION ==========
+    initNavMenu() {
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = item.dataset.page;
+                this.navigate(page);
+            });
+        });
+    },
+
     navigate(pageId) {
         if (pageId === 'upload' && !this.currentUser) {
             this.showToast('Silakan login terlebih dahulu', 'error');
@@ -512,17 +437,17 @@ initLoginSlider() {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
 
-        document.getElementById(`page-${pageId}`).classList.add('active');
+        const targetPage = document.getElementById(`page-${pageId}`);
+        if (targetPage) targetPage.classList.add('active');
+        
         const navItem = document.querySelector(`.nav-item[data-page="${pageId}"]`);
         if (navItem) navItem.classList.add('active');
 
-        // Tutup mobile menu
         document.getElementById('nav-menu').classList.remove('active');
 
-        // Load stats jika halaman statistik
         if (pageId === 'stats') this.loadStats();
+        if (pageId === 'gallery') this.loadGalleryWithFilters({});
 
-        // Scroll ke atas
         window.scrollTo({ top: 0, behavior: 'smooth' });
     },
 
@@ -533,19 +458,65 @@ initLoginSlider() {
         const navUpload = document.getElementById('nav-upload');
 
         if (this.currentUser) {
-            userProfile.style.display = 'flex';
-            userName.textContent = this.currentUser.email.split('@')[0];
-            btnLogin.style.display = 'none';
-            navUpload.style.display = 'flex';
+            if (userProfile) userProfile.style.display = 'flex';
+            if (userName) userName.textContent = this.currentUser.email.split('@')[0];
+            if (btnLogin) btnLogin.style.display = 'none';
+            if (navUpload) navUpload.style.display = 'flex';
         } else {
-            userProfile.style.display = 'none';
-            btnLogin.style.display = 'flex';
-            navUpload.style.display = 'none';
-            this.navigate('gallery');
+            if (userProfile) userProfile.style.display = 'none';
+            if (btnLogin) btnLogin.style.display = 'flex';
+            if (navUpload) navUpload.style.display = 'none';
         }
     },
 
-    // ========== AUTH ==========
+    // ========== LOGIN SLIDER ==========
+    initLoginSlider() {
+        const slides = document.querySelectorAll('.slide');
+        const dots = document.querySelectorAll('.dot');
+        if (slides.length === 0) return;
+
+        this.currentSlide = 0;
+
+        const goToSlide = (index) => {
+            slides.forEach(s => s.classList.remove('active'));
+            dots.forEach(d => d.classList.remove('active'));
+            slides[index].classList.add('active');
+            if (dots[index]) dots[index].classList.add('active');
+            this.currentSlide = index;
+        };
+
+        const nextSlide = () => {
+            const next = (this.currentSlide + 1) % slides.length;
+            goToSlide(next);
+        };
+
+        const startSlide = () => {
+            this.stopSlide();
+            this.slideInterval = setInterval(nextSlide, 5000);
+        };
+
+        this.stopSlide = () => {
+            if (this.slideInterval) clearInterval(this.slideInterval);
+        };
+
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', () => {
+                this.stopSlide();
+                goToSlide(index);
+                startSlide();
+            });
+        });
+
+        const visual = document.querySelector('.login-visual');
+        if (visual) {
+            visual.addEventListener('mouseenter', () => this.stopSlide());
+            visual.addEventListener('mouseleave', startSlide);
+        }
+
+        startSlide();
+    },
+
+    // ========== AUTHENTICATION ==========
     async handleLogin(event) {
         event.preventDefault();
         const email = document.getElementById('login-email').value.trim();
@@ -579,12 +550,12 @@ initLoginSlider() {
             const opt1 = document.createElement('option');
             opt1.value = school.name;
             opt1.textContent = school.name;
-            filterSelect.appendChild(opt1);
+            if (filterSelect) filterSelect.appendChild(opt1);
 
             const opt2 = document.createElement('option');
             opt2.value = school.name;
             opt2.textContent = school.name;
-            uploadSelect.appendChild(opt2);
+            if (uploadSelect) uploadSelect.appendChild(opt2);
         });
     },
 
@@ -598,7 +569,7 @@ initLoginSlider() {
         }
 
         const previewContainer = document.getElementById('photo-preview');
-        previewContainer.innerHTML = '';
+        if (previewContainer) previewContainer.innerHTML = '';
         this.selectedPhotos = [];
         this.showToast('Sedang mengompres foto...', 'success');
 
@@ -621,7 +592,7 @@ initLoginSlider() {
                             <i class="fa-solid fa-times"></i>
                         </button>
                     `;
-                    previewContainer.appendChild(div);
+                    if (previewContainer) previewContainer.appendChild(div);
                 };
                 reader.readAsDataURL(compressedFile);
             } catch (error) {
@@ -665,7 +636,8 @@ initLoginSlider() {
             return;
         }
 
-        document.getElementById('upload-overlay').style.display = 'flex';
+        const overlay = document.getElementById('upload-overlay');
+        if (overlay) overlay.style.display = 'flex';
 
         try {
             const photoUrls = [];
@@ -696,17 +668,17 @@ initLoginSlider() {
 
             this.showToast('✅ Dokumentasi berhasil diupload!', 'success');
             document.getElementById('upload-form').reset();
-            document.getElementById('photo-preview').innerHTML = '';
+            const preview = document.getElementById('photo-preview');
+            if (preview) preview.innerHTML = '';
             this.selectedPhotos = [];
             document.getElementById('upload-date').valueAsDate = new Date();
             this.navigate('gallery');
-            this.loadGalleryWithFilters({});
 
         } catch (error) {
             console.error(error);
             this.showToast('Gagal mengupload: ' + error.message, 'error');
         } finally {
-            document.getElementById('upload-overlay').style.display = 'none';
+            if (overlay) overlay.style.display = 'none';
         }
     },
 
@@ -717,11 +689,18 @@ initLoginSlider() {
     },
 
     resetFilters() {
-        document.getElementById('search-text').value = '';
-        document.getElementById('filter-sekolah').value = '';
-        document.getElementById('filter-bulan').value = '';
-        document.getElementById('filter-tahun').value = '2026';
-        document.getElementById('filter-tanggal-upload').value = '';
+        const searchText = document.getElementById('search-text');
+        const filterSekolah = document.getElementById('filter-sekolah');
+        const filterBulan = document.getElementById('filter-bulan');
+        const filterTahun = document.getElementById('filter-tahun');
+        const filterTanggal = document.getElementById('filter-tanggal-upload');
+
+        if (searchText) searchText.value = '';
+        if (filterSekolah) filterSekolah.value = '';
+        if (filterBulan) filterBulan.value = '';
+        if (filterTahun) filterTahun.value = '2026';
+        if (filterTanggal) filterTanggal.value = '';
+
         this.applyFilters();
         this.showToast('Filter direset', 'success');
     },
@@ -741,9 +720,11 @@ initLoginSlider() {
         if (filterTanggalUpload) activeFilters.push(`Tanggal Upload: ${filterTanggalUpload}`);
 
         const filterInfo = document.getElementById('filter-info');
-        filterInfo.innerHTML = activeFilters.length > 0 
-            ? `<i class="fa-solid fa-filter"></i><span>Filter aktif: ${activeFilters.join(', ')}</span>`
-            : `<i class="fa-solid fa-circle-info"></i><span>Menampilkan semua kegiatan</span>`;
+        if (filterInfo) {
+            filterInfo.innerHTML = activeFilters.length > 0 
+                ? `<i class="fa-solid fa-filter"></i><span>Filter aktif: ${activeFilters.join(', ')}</span>`
+                : `<i class="fa-solid fa-circle-info"></i><span>Menampilkan semua kegiatan</span>`;
+        }
 
         this.loadGalleryWithFilters({ searchText, filterSekolah, filterBulan, filterTahun, filterTanggalUpload });
     },
@@ -762,9 +743,11 @@ initLoginSlider() {
         const container = document.getElementById('gallery-container');
         const skeleton = document.getElementById('gallery-skeleton');
 
-        container.innerHTML = '';
-        skeleton.style.display = 'grid';
-        skeleton.innerHTML = Array(6).fill('<div class="skeleton skeleton-card"></div>').join('');
+        if (container) container.innerHTML = '';
+        if (skeleton) {
+            skeleton.style.display = 'grid';
+            skeleton.innerHTML = Array(6).fill('<div class="skeleton skeleton-card"></div>').join('');
+        }
 
         try {
             const snapshot = await db.collection('activities')
@@ -772,15 +755,17 @@ initLoginSlider() {
                 .limit(100)
                 .get();
 
-            skeleton.style.display = 'none';
+            if (skeleton) skeleton.style.display = 'none';
 
             if (snapshot.empty) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fa-regular fa-folder-open"></i>
-                        <h3>Belum Ada Kegiatan</h3>
-                        <p>Jadilah yang pertama mengupload dokumentasi!</p>
-                    </div>`;
+                if (container) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa-regular fa-folder-open"></i>
+                            <h3>Belum Ada Kegiatan</h3>
+                            <p>Jadilah yang pertama mengupload dokumentasi!</p>
+                        </div>`;
+                }
                 return;
             }
 
@@ -813,12 +798,14 @@ initLoginSlider() {
             });
 
             if (filteredDocs.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <h3>Tidak Ada Hasil</h3>
-                        <p>Tidak ada kegiatan yang cocok dengan filter.</p>
-                    </div>`;
+                if (container) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <h3>Tidak Ada Hasil</h3>
+                            <p>Tidak ada kegiatan yang cocok dengan filter.</p>
+                        </div>`;
+                }
                 return;
             }
 
@@ -851,18 +838,20 @@ initLoginSlider() {
                         </div>
                     </div>
                 `;
-                container.appendChild(card);
+                if (container) container.appendChild(card);
             });
 
             this.showToast(`Ditemukan ${filteredDocs.length} kegiatan`, 'success');
         } catch (error) {
-            skeleton.style.display = 'none';
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <h3>Gagal Memuat Data</h3>
-                    <p>${error.message}</p>
-                </div>`;
+            if (skeleton) skeleton.style.display = 'none';
+            if (container) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <h3>Gagal Memuat Data</h3>
+                        <p>${error.message}</p>
+                    </div>`;
+            }
         }
     },
 
@@ -890,41 +879,45 @@ initLoginSlider() {
                 sekolahCount[sch] = (sekolahCount[sch] || 0) + 1;
             });
 
-            // Update stat cards
-            document.getElementById('stat-kegiatan').textContent = totalKegiatan;
-            document.getElementById('stat-foto').textContent = totalFoto;
-            document.getElementById('stat-video').textContent = totalVideo;
+            const elKegiatan = document.getElementById('stat-kegiatan');
+            const elFoto = document.getElementById('stat-foto');
+            const elVideo = document.getElementById('stat-video');
+            if (elKegiatan) elKegiatan.textContent = totalKegiatan;
+            if (elFoto) elFoto.textContent = totalFoto;
+            if (elVideo) elVideo.textContent = totalVideo;
 
-            // Kategori stats
             const katContainer = document.getElementById('kategori-stats');
-            if (Object.keys(kategoriCount).length === 0) {
-                katContainer.innerHTML = '<p class="empty-text">Belum ada data</p>';
-            } else {
-                katContainer.innerHTML = Object.entries(kategoriCount)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([name, count]) => `
-                        <div class="kategori-item">
-                            <span class="kategori-name">${name}</span>
-                            <span class="kategori-count">${count}</span>
-                        </div>
-                    `).join('');
+            if (katContainer) {
+                if (Object.keys(kategoriCount).length === 0) {
+                    katContainer.innerHTML = '<p class="empty-text">Belum ada data</p>';
+                } else {
+                    katContainer.innerHTML = Object.entries(kategoriCount)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([name, count]) => `
+                            <div class="kategori-item">
+                                <span class="kategori-name">${name}</span>
+                                <span class="kategori-count">${count}</span>
+                            </div>
+                        `).join('');
+                }
             }
 
-            // Top sekolah
             const topContainer = document.getElementById('top-sekolah');
-            const topSekolah = Object.entries(sekolahCount)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 10);
-            
-            if (topSekolah.length === 0) {
-                topContainer.innerHTML = '<p class="empty-text">Belum ada data</p>';
-            } else {
-                topContainer.innerHTML = topSekolah.map(([name, count], idx) => `
-                    <div class="top-item">
-                        <span class="top-name">${idx + 1}. ${name}</span>
-                        <span class="top-count">${count}</span>
-                    </div>
-                `).join('');
+            if (topContainer) {
+                const topSekolah = Object.entries(sekolahCount)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10);
+                
+                if (topSekolah.length === 0) {
+                    topContainer.innerHTML = '<p class="empty-text">Belum ada data</p>';
+                } else {
+                    topContainer.innerHTML = topSekolah.map(([name, count], idx) => `
+                        <div class="top-item">
+                            <span class="top-name">${idx + 1}. ${name}</span>
+                            <span class="top-count">${count}</span>
+                        </div>
+                    `).join('');
+                }
             }
 
         } catch (error) {
@@ -932,9 +925,11 @@ initLoginSlider() {
         }
     },
 
-    // ========== TOAST ==========
+    // ========== TOAST NOTIFICATION ==========
     showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
+        if (!container) return;
+
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         
@@ -955,5 +950,7 @@ initLoginSlider() {
     }
 };
 
-// Start App
+// ============================================
+// START APLIKASI
+// ============================================
 document.addEventListener('DOMContentLoaded', () => App.init());
