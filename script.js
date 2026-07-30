@@ -247,6 +247,241 @@ const App = {
             document.getElementById('upload-overlay').style.display = 'none';
         }
     },
+/**
+ * Load Daftar Sekolah dari Firestore
+ */
+async loadSchools() {
+    try {
+        const snapshot = await this.db.collection('schools').orderBy('name').get();
+        const select = document.getElementById('filter-sekolah');
+        
+        // Kosongkan opsi kecuali yang pertama
+        select.innerHTML = '<option value="">Semua Sekolah</option>';
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const option = document.createElement('option');
+            option.value = data.name;
+            option.textContent = data.name;
+            select.appendChild(option);
+        });
+        
+        console.log(`${snapshot.size} sekolah dimuat.`);
+    } catch (error) {
+        console.error("Gagal memuat daftar sekolah:", error);
+        // Fallback: tampilkan sekolah hardcoded jika Firestore kosong
+        const fallbackSchools = [
+            "SD NEGERI 1 ENDE",
+            "SD INPRES AEDARI",
+            "SD KATOLIK ENDE 8"
+        ];
+        const select = document.getElementById('filter-sekolah');
+        fallbackSchools.forEach(school => {
+            const option = document.createElement('option');
+            option.value = school;
+            option.textContent = school;
+            select.appendChild(option);
+        });
+    }
+},
+
+/**
+ * Debounce untuk search text (delay 500ms)
+ */
+debounceTimer: null,
+debounceFilter() {
+    clearTimeout(this.debounceTimer);
+    this.debounceTimer = setTimeout(() => {
+        this.applyFilters();
+    }, 500);
+},
+
+/**
+ * Reset Semua Filter
+ */
+resetFilters() {
+    document.getElementById('search-text').value = '';
+    document.getElementById('filter-sekolah').value = '';
+    document.getElementById('filter-bulan').value = '';
+    document.getElementById('filter-tahun').value = '2026';
+    document.getElementById('filter-tanggal-upload').value = '';
+    this.applyFilters();
+    this.showToast('Filter direset', 'success');
+},
+
+/**
+ * Terapkan Semua Filter
+ */
+async applyFilters() {
+    const searchText = document.getElementById('search-text').value.toLowerCase().trim();
+    const filterSekolah = document.getElementById('filter-sekolah').value;
+    const filterBulan = document.getElementById('filter-bulan').value;
+    const filterTahun = document.getElementById('filter-tahun').value;
+    const filterTanggalUpload = document.getElementById('filter-tanggal-upload').value;
+    
+    // Update info filter
+    const filterInfo = document.getElementById('filter-info');
+    const activeFilters = [];
+    if (searchText) activeFilters.push(`Pencarian: "${searchText}"`);
+    if (filterSekolah) activeFilters.push(`Sekolah: ${filterSekolah}`);
+    if (filterBulan) activeFilters.push(`Bulan: ${this.getBulanName(filterBulan)}`);
+    if (filterTahun) activeFilters.push(`Tahun: ${filterTahun}`);
+    if (filterTanggalUpload) activeFilters.push(`Tanggal Upload: ${filterTanggalUpload}`);
+    
+    if (activeFilters.length > 0) {
+        filterInfo.innerHTML = `<i class="fa-solid fa-filter"></i><span>Filter aktif: ${activeFilters.join(', ')}</span>`;
+    } else {
+        filterInfo.innerHTML = `<i class="fa-solid fa-info-circle"></i><span>Menampilkan semua kegiatan</span>`;
+    }
+    
+    await this.loadGalleryWithFilters({
+        searchText,
+        filterSekolah,
+        filterBulan,
+        filterTahun,
+        filterTanggalUpload
+    });
+},
+
+/**
+ * Konversi Nomor Bulan ke Nama
+ */
+getBulanName(bulanNum) {
+    const bulanNames = {
+        '1': 'Januari', '2': 'Februari', '3': 'Maret', '4': 'April',
+        '5': 'Mei', '6': 'Juni', '7': 'Juli', '8': 'Agustus',
+        '9': 'September', '10': 'Oktober', '11': 'November', '12': 'Desember'
+    };
+    return bulanNames[bulanNum] || '';
+},
+
+/**
+ * Load Gallery dengan Filter
+ */
+async loadGalleryWithFilters(filters = {}) {
+    const container = document.getElementById('gallery-container');
+    const skeleton = document.getElementById('gallery-skeleton');
+    
+    container.innerHTML = '';
+    skeleton.style.display = 'grid';
+    skeleton.innerHTML = Array(6).fill('<div class="skeleton skeleton-card"></div>').join('');
+
+    try {
+        // Query dasar: ambil 100 data terbaru
+        let query = this.db.collection('activities')
+            .orderBy('createdAt', 'desc')
+            .limit(100);
+        
+        const snapshot = await query.get();
+        skeleton.style.display = 'none';
+
+        if (snapshot.empty) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fa-regular fa-folder-open"></i>
+                    <p>Belum ada data kegiatan.</p>
+                </div>`;
+            return;
+        }
+
+        let filteredDocs = [];
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            let pass = true;
+
+            // Filter 1: Search Text (judul atau deskripsi)
+            if (filters.searchText) {
+                const title = (data.title || '').toLowerCase();
+                const desc = (data.description || '').toLowerCase();
+                if (!title.includes(filters.searchText) && !desc.includes(filters.searchText)) {
+                    pass = false;
+                }
+            }
+
+            // Filter 2: Nama Sekolah
+            if (filters.filterSekolah && data.schoolName !== filters.filterSekolah) {
+                pass = false;
+            }
+
+            // Filter 3 & 4: Bulan dan Tahun (dari field 'date' tanggal kegiatan)
+            if (filters.filterBulan || filters.filterTahun) {
+                if (data.date) {
+                    const dateObj = new Date(data.date);
+                    const docBulan = (dateObj.getMonth() + 1).toString();
+                    const docTahun = dateObj.getFullYear().toString();
+                    
+                    if (filters.filterBulan && docBulan !== filters.filterBulan) {
+                        pass = false;
+                    }
+                    if (filters.filterTahun && docTahun !== filters.filterTahun) {
+                        pass = false;
+                    }
+                } else {
+                    pass = false;
+                }
+            }
+
+            // Filter 5: Tanggal Upload (dari field 'createdAt')
+            if (filters.filterTanggalUpload && data.createdAt) {
+                const uploadDate = data.createdAt.toDate();
+                const uploadDateStr = uploadDate.toISOString().split('T')[0];
+                if (uploadDateStr !== filters.filterTanggalUpload) {
+                    pass = false;
+                }
+            }
+
+            if (pass) {
+                filteredDocs.push({ id: doc.id, data });
+            }
+        });
+
+        // Tampilkan hasil
+        if (filteredDocs.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <p>Tidak ada kegiatan yang cocok dengan filter.</p>
+                </div>`;
+            return;
+        }
+
+        filteredDocs.forEach(doc => {
+            const data = doc.data;
+            const thumb = data.photos[0];
+            const dateStr = data.date ? new Date(data.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
+            
+            const card = document.createElement('div');
+            card.className = 'gallery-card';
+            card.innerHTML = `
+                <img src="${thumb}" alt="${data.title}" loading="lazy">
+                <div class="gallery-content">
+                    <h4>${data.title}</h4>
+                    <p style="color: var(--primary); font-weight: 600; font-size: 0.9rem;">${data.schoolName}</p>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
+                        <i class="fa-regular fa-calendar"></i> ${dateStr}
+                    </p>
+                    ${data.youtubeId ? `<p style="margin-top: 0.5rem;"><a href="https://youtu.be/${data.youtubeId}" target="_blank" style="color: var(--danger); text-decoration: none;"><i class="fa-brands fa-youtube"></i> Tonton Video</a></p>` : ''}
+                    <div class="gallery-meta">
+                        <span class="badge">${data.category}</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+
+        this.showToast(`Ditemukan ${filteredDocs.length} kegiatan`, 'success');
+
+    } catch (error) {
+        console.error("Filter Error:", error);
+        skeleton.style.display = 'none';
+        container.innerHTML = `
+            <div class="empty-state" style="color: var(--danger);">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <p>Gagal memuat data. Periksa koneksi internet Anda.</p>
+            </div>`;
+    }
+},
 
     /**
      * Gallery Logic
@@ -312,6 +547,7 @@ const App = {
                 </div>`;
         }
     },
+    
     /**
      * Utility: Toast Notification
      */
