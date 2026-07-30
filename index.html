@@ -214,35 +214,105 @@
         </section>
 
         <!-- PAGE: LOGIN -->
-        <section id="page-login" class="page">
-            <div class="login-wrapper">
-                <div class="login-card">
-                    <div class="login-header">
-                        <div class="login-icon">
-                            <i class="fa-solid fa-shield-halved"></i>
-                        </div>
-                        <h2>Selamat Datang</h2>
-                        <p>Login sebagai Operator Sekolah</p>
+<section id="page-login" class="page">
+    <div class="login-split">
+        <!-- Sisi Kiri: Slider Foto Kegiatan -->
+        <div class="login-visual">
+            <div class="login-slider">
+                <div class="slide active" style="background-image: url('https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=1200&q=80');">
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <span class="slide-tag"><i class="fa-solid fa-book-open"></i> Pembelajaran</span>
+                        <h3>Proses Belajar Mengajar</h3>
+                        <p>Menciptakan generasi cerdas dan berkarakter di 334 SD Kabupaten Ende</p>
                     </div>
-                    <form id="login-form" onsubmit="App.handleLogin(event)">
-                        <div class="form-group">
-                            <label><i class="fa-solid fa-envelope"></i> Email</label>
-                            <input type="email" id="login-email" required placeholder="operator@sekolah.sch.id">
-                        </div>
-                        <div class="form-group">
-                            <label><i class="fa-solid fa-lock"></i> Password</label>
-                            <input type="password" id="login-password" required placeholder="••••••••">
-                        </div>
-                        <button type="submit" class="btn-primary btn-block">
-                            <i class="fa-solid fa-right-to-bracket"></i> Masuk
-                        </button>
-                    </form>
-                    <div class="login-footer">
-                        <p>Belum punya akun? Hubungi Admin Dinas</p>
+                </div>
+                <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1577896851231-70ef18881754?w=1200&q=80');">
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <span class="slide-tag"><i class="fa-solid fa-chalkboard-user"></i> Guru Inspiratif</span>
+                        <h3>Guru Pengajar Profesional</h3>
+                        <p>Mendidik dengan hati, membentuk masa depan yang gemilang</p>
+                    </div>
+                </div>
+                <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=1200&q=80');">
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <span class="slide-tag"><i class="fa-solid fa-users"></i> Siswa Aktif</span>
+                        <h3>Kegiatan Kelas Interaktif</h3>
+                        <p>Siswa belajar dengan semangat dan penuh kreativitas</p>
+                    </div>
+                </div>
+                <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1200&q=80');">
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <span class="slide-tag"><i class="fa-solid fa-graduation-cap"></i> Prestasi</span>
+                        <h3>Membentuk Generasi Unggul</h3>
+                        <p>Dokumentasi setiap momen berharga pendidikan di Ende</p>
+                    </div>
+                </div>
+                <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1544717305-2782549b5136?w=1200&q=80');">
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <span class="slide-tag"><i class="fa-solid fa-book"></i> Literasi</span>
+                        <h3>Budaya Membaca</h3>
+                        <p>Perpustakaan sekolah sebagai jendela dunia bagi siswa</p>
                     </div>
                 </div>
             </div>
-        </section>
+
+            <!-- Slider Dots -->
+            <div class="slider-dots">
+                <span class="dot active" data-index="0"></span>
+                <span class="dot" data-index="1"></span>
+                <span class="dot" data-index="2"></span>
+                <span class="dot" data-index="3"></span>
+                <span class="dot" data-index="4"></span>
+            </div>
+
+            <!-- Brand Info di Visual -->
+            <div class="login-visual-footer">
+                <div class="visual-brand">
+                    <i class="fa-solid fa-school"></i>
+                    <span>Galeri SD Kabupaten Ende</span>
+                </div>
+                <p>Platform Dokumentasi Digital Pendidikan</p>
+            </div>
+        </div>
+
+        <!-- Sisi Kanan: Form Login -->
+        <div class="login-form-side">
+            <div class="login-card">
+                <div class="login-header">
+                    <div class="login-icon">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h2>Selamat Datang Kembali</h2>
+                    <p>Masuk sebagai Operator Sekolah untuk mengupload dokumentasi kegiatan</p>
+                </div>
+                <form id="login-form" onsubmit="App.handleLogin(event)">
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-envelope"></i> Email Operator</label>
+                        <input type="email" id="login-email" required placeholder="operator@sekolah.sch.id">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-lock"></i> Password</label>
+                        <input type="password" id="login-password" required placeholder="Masukkan password">
+                    </div>
+                    <button type="submit" class="btn-primary btn-block btn-lg">
+                        <i class="fa-solid fa-right-to-bracket"></i> Masuk
+                    </button>
+                </form>
+                <div class="login-footer">
+                    <div class="divider">
+                        <span>Informasi</span>
+                    </div>
+                    <p><i class="fa-solid fa-circle-info"></i> Belum punya akun? Hubungi Admin Dinas Pendidikan Kabupaten Ende</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
         <!-- PAGE: UPLOAD -->
         <section id="page-upload" class="page">
