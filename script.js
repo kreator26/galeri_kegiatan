@@ -2,13 +2,14 @@
 // 1. KONFIGURASI FIREBASE
 // ============================================
 const firebaseConfig = {
-    apiKey: "AIzaSyBYb9zFaKSASEmpQK2NKChv7aj9tSTTGIM",
-    authDomain: "galeri-kegiatan-ende.firebaseapp.com",
-    projectId: "galeri-kegiatan-ende",
-    storageBucket: "galeri-kegiatan-ende.firebasestorage.app",
-    messagingSenderId: "1036576141299",
-    appId: "1:1036576141299:web:89d70636e1f91850916c86",
-    measurementId: "G-9QTLLP3YC3"
+  apiKey: "AIzaSyAKgJ-Uvv3oqMWYaB2neotOc_IqpaOZvcw",
+  authDomain: "galeri-sekolah-ende.firebaseapp.com",
+  databaseURL: "https://galeri-sekolah-ende-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "galeri-sekolah-ende",
+  storageBucket: "galeri-sekolah-ende.firebasestorage.app",
+  messagingSenderId: "544527225904",
+  appId: "1:544527225904:web:efe6bb3e7fdbb8578ec9f5",
+  measurementId: "G-T7CJWFZYZN"
 };
 
 firebase.initializeApp(firebaseConfig);
