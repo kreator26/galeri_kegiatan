@@ -251,7 +251,7 @@ const App = {
     /**
      * Gallery Logic
      */
-    async loadGallery() {
+        async loadGallery() {
         const container = document.getElementById('gallery-container');
         const skeleton = document.getElementById('gallery-skeleton');
         
@@ -262,7 +262,6 @@ const App = {
         skeleton.innerHTML = Array(6).fill('<div class="skeleton skeleton-card"></div>').join('');
 
         try {
-            // Bisa ditambahkan filter di sini nanti
             const snapshot = await this.db.collection('activities')
                 .orderBy('createdAt', 'desc')
                 .limit(20)
@@ -286,6 +285,7 @@ const App = {
                 
                 const card = document.createElement('div');
                 card.className = 'gallery-card';
+                // PERBAIKAN: Menambahkan tanda '>' yang hilang di sini
                 card.innerHTML = `
                     <img src="${thumb}" alt="${data.title}" loading="lazy">
                     <div class="gallery-content">
@@ -297,12 +297,13 @@ const App = {
                         ${data.youtubeId ? `<p style="margin-top: 0.5rem;"><a href="https://youtu.be/${data.youtubeId}" target="_blank" style="color: var(--danger); text-decoration: none;"><i class="fa-brands fa-youtube"></i> Tonton Video</a></p>` : ''}
                         <div class="gallery-meta">
                             <span class="badge">${data.category}</span>
-                        </div
+                        </div>
                     </div>
                 `;
                 container.appendChild(card);
             });
         } catch (error) {
+            console.error("Gallery Error:", error);
             skeleton.style.display = 'none';
             container.innerHTML = `
                 <div class="empty-state" style="color: var(--danger);">
@@ -311,7 +312,6 @@ const App = {
                 </div>`;
         }
     },
-
     /**
      * Utility: Toast Notification
      */
