@@ -1,177 +1,514 @@
-/**
- * Galeri Dokumentasi SD Kabupaten Ende
- * Professional Vanilla JS Architecture
- * Version: 2.0 - Full Features
- */
+// ============================================
+// 1. KONFIGURASI FIREBASE
+// ============================================
+const firebaseConfig = {
+    apiKey: "AIzaSyBYb9zFaKSASEmpQK2NKChv7aj9tSTTGIM",
+    authDomain: "galeri-kegiatan-ende.firebaseapp.com",
+    projectId: "galeri-kegiatan-ende",
+    storageBucket: "galeri-kegiatan-ende.firebasestorage.app",
+    messagingSenderId: "1036576141299",
+    appId: "1:1036576141299:web:89d70636e1f91850916c86",
+    measurementId: "G-9QTLLP3YC3"
+};
 
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+// ============================================
+// 2. DATA 334 SEKOLAH
+// ============================================
+const schoolsData = [
+    {"name": "SD GMIT ENDE 4", "kecamatan": "Ende Utara"},
+    {"name": "SD INPRES AEDARI", "kecamatan": "Detukeli"},
+    {"name": "SD INPRES AEKORA", "kecamatan": "Detukeli"},
+    {"name": "SD INPRES AEMAU", "kecamatan": "Maurole"},
+    {"name": "SD INPRES AEREA", "kecamatan": "Ndori"},
+    {"name": "SD INPRES AETEKE", "kecamatan": "Lio Timur"},
+    {"name": "SD INPRES BARAI 1", "kecamatan": "Ende Utara"},
+    {"name": "SD INPRES BARAI 2", "kecamatan": "Ende Utara"},
+    {"name": "SD INPRES BELANGGO", "kecamatan": "Wolowaru"},
+    {"name": "SD INPRES BHOANAWA 1", "kecamatan": "Ende Selatan"},
+    {"name": "SD INPRES BHOANAWA 2", "kecamatan": "Ende Selatan"},
+    {"name": "SD INPRES DETUBELO", "kecamatan": "Lio Timur"},
+    {"name": "SD INPRES DETUENA", "kecamatan": "Kelimutu"},
+    {"name": "SD INPRES DETUETE", "kecamatan": "Wewaria"},
+    {"name": "SD INPRES DETUSOKO", "kecamatan": "Detusoko"},
+    {"name": "SD INPRES DETUWIRA", "kecamatan": "Detusoko"},
+    {"name": "SD INPRES EKOLEA", "kecamatan": "Wewaria"},
+    {"name": "SD INPRES EKOTARU", "kecamatan": "Wewaria"},
+    {"name": "SD INPRES ENDE 10", "kecamatan": "Ende Tengah"},
+    {"name": "SD INPRES ENDE 11", "kecamatan": "Ende Utara"},
+    {"name": "SD INPRES ENDE 12", "kecamatan": "Ende Utara"},
+    {"name": "SD INPRES ENDE 13", "kecamatan": "Ende Tengah"},
+    {"name": "SD INPRES ENDE 14", "kecamatan": "Ende Timur"},
+    {"name": "SD INPRES ENDE 15", "kecamatan": "Ende Utara"},
+    {"name": "SD INPRES ENDE 16", "kecamatan": "Ende Timur"},
+    {"name": "SD INPRES ENDE 7", "kecamatan": "Ende Timur"},
+    {"name": "SD INPRES ENDE 9", "kecamatan": "Ende Utara"},
+    {"name": "SD INPRES FEORIA", "kecamatan": "Detukeli"},
+    {"name": "SD INPRES HOBAKUA", "kecamatan": "Ndori"},
+    {"name": "SD INPRES ILIWODO 1", "kecamatan": "Ndori"},
+    {"name": "SD INPRES ILIWODO 2", "kecamatan": "Ndori"},
+    {"name": "SD INPRES JOPU 4", "kecamatan": "Wolowaru"},
+    {"name": "SD INPRES JOPU 5", "kecamatan": "Wolowaru"},
+    {"name": "SD INPRES KEKAKEU", "kecamatan": "Nangapanda"},
+    {"name": "SD INPRES KEKAWII", "kecamatan": "Ende"},
+    {"name": "SD INPRES KELITEMBU", "kecamatan": "Wewaria"},
+    {"name": "SD INPRES KOAGATA", "kecamatan": "Ndona"},
+    {"name": "SD INPRES KOAWENA", "kecamatan": "Ende Timur"},
+    {"name": "SD INPRES KOLIKAPA", "kecamatan": "Maukaro"},
+    {"name": "SD INPRES KOTABARU", "kecamatan": "Kota Baru"},
+    {"name": "SD INPRES KURUMBORO", "kecamatan": "Ende Timur"},
+    {"name": "SD INPRES LEWAGARE", "kecamatan": "Detukeli"},
+    {"name": "SD INPRES LIANGGERE", "kecamatan": "Ende"},
+    {"name": "SD INPRES LIGALEJO", "kecamatan": "Kota Baru"},
+    {"name": "SD INPRES LOKOBOKO", "kecamatan": "Ndona"},
+    {"name": "SD INPRES LOWOKETO", "kecamatan": "Kota Baru"},
+    {"name": "SD INPRES LOWORONGGA", "kecamatan": "Ndona"},
+    {"name": "SD INPRES MALAWARU", "kecamatan": "Nangapanda"},
+    {"name": "SD INPRES MAUAU", "kecamatan": "Pulau Ende"},
+    {"name": "SD INPRES MAUROLE", "kecamatan": "Maurole"},
+    {"name": "SD INPRES MAURONGGA", "kecamatan": "Nangapanda"},
+    {"name": "SD INPRES MAUTENDA", "kecamatan": "Wewaria"},
+    {"name": "SD INPRES MBONGAWANI", "kecamatan": "Ende Selatan"},
+    {"name": "SD INPRES MBOTUJITA", "kecamatan": "Detusoko"},
+    {"name": "SD INPRES MBUJALOO", "kecamatan": "Wolojita"},
+    {"name": "SD INPRES MBULILOO", "kecamatan": "Wolowaru"},
+    {"name": "SD INPRES METINUMBA 1", "kecamatan": "Pulau Ende"},
+    {"name": "SD INPRES METINUMBA 2", "kecamatan": "Pulau Ende"},
+    {"name": "SD INPRES MUNDINGGASA", "kecamatan": "Maukaro"},
+    {"name": "SD INPRES NANGANIO", "kecamatan": "Maurole"},
+    {"name": "SD INPRES NANGAPANDA 2", "kecamatan": "Nangapanda"},
+    {"name": "SD INPRES NANGAPANDA 3", "kecamatan": "Nangapanda"},
+    {"name": "SD INPRES NDETUFEO", "kecamatan": "Nangapanda"},
+    {"name": "SD INPRES NDETUNDORA 1", "kecamatan": "Ende"},
+    {"name": "SD INPRES NDETUNDORA 2", "kecamatan": "Ende"},
+    {"name": "SD INPRES NDETUWARU", "kecamatan": "Nangapanda"},
+    {"name": "SD INPRES NDITO", "kecamatan": "Detusoko"},
+    {"name": "SD INPRES NDONA 3", "kecamatan": "Ndona"},
+    {"name": "SD INPRES NDONA 4", "kecamatan": "Ndona"},
+    {"name": "SD INPRES NGALUPOLO", "kecamatan": "Ndona"},
+    {"name": "SD INPRES NGALUROGA", "kecamatan": "Ndona"},
+    {"name": "SD INPRES NGGELA 2", "kecamatan": "Wolojita"},
+    {"name": "SD INPRES NGGEMO", "kecamatan": "Maukaro"},
+    {"name": "SD INPRES NIONIBA", "kecamatan": "Maurole"},
+    {"name": "SD INPRES NIOSANGGO", "kecamatan": "Wewaria"},
+    {"name": "SD INPRES NIRANUSA", "kecamatan": "Maurole"},
+    {"name": "SD INPRES NUAJA", "kecamatan": "Ende"},
+    {"name": "SD INPRES NUAMURI 2", "kecamatan": "Kelimutu"},
+    {"name": "SD INPRES NUANAGA", "kecamatan": "Kota Baru"},
+    {"name": "SD INPRES NUAPU", "kecamatan": "Ndona Timur"},
+    {"name": "SD INPRES NUATU", "kecamatan": "Wolowaru"},
+    {"name": "SD INPRES NUMBA 1", "kecamatan": "Nangapanda"},
+    {"name": "SD INPRES NUMBA 2", "kecamatan": "Nangapanda"},
+    {"name": "SD INPRES ONEKORE 3", "kecamatan": "Ende Tengah"},
+    {"name": "SD INPRES ONEKORE 4", "kecamatan": "Ende Utara"},
+    {"name": "SD INPRES ONEKORE 5", "kecamatan": "Ende Tengah"},
+    {"name": "SD INPRES ONEKORE 6", "kecamatan": "Ende Tengah"},
+    {"name": "SD INPRES OTOMBAMBA", "kecamatan": "Ndona"},
+    {"name": "SD INPRES PANALATO", "kecamatan": "Kota Baru"},
+    {"name": "SD INPRES PASADOO", "kecamatan": "Detusoko"},
+    {"name": "SD INPRES PAUPANDA 1", "kecamatan": "Ende Selatan"},
+    {"name": "SD INPRES PAUPANDA 2", "kecamatan": "Ende Selatan"},
+    {"name": "SD INPRES PAUPANDA 3", "kecamatan": "Ende Selatan"},
+    {"name": "SD INPRES PUUDHOMBO", "kecamatan": "Ende"},
+    {"name": "SD INPRES PUUKUNGU", "kecamatan": "Nangapanda"},
+    {"name": "SD INPRES PUUPAU", "kecamatan": "Nangapanda"},
+    {"name": "SD INPRES RAAWEKA", "kecamatan": "Wewaria"},
+    {"name": "SD INPRES RABURIA", "kecamatan": "Ende"},
+    {"name": "SD INPRES RANGGATALO", "kecamatan": "Lio Timur"},
+    {"name": "SD INPRES RATESUBA", "kecamatan": "Maukaro"},
+    {"name": "SD INPRES REDA", "kecamatan": "Ende"},
+    {"name": "SD INPRES RENDOMAUPANDI", "kecamatan": "Pulau Ende"},
+    {"name": "SD INPRES ROA", "kecamatan": "Detusoko"},
+    {"name": "SD INPRES ROJA 2", "kecamatan": "Ende Selatan"},
+    {"name": "SD INPRES ROJABAI", "kecamatan": "Kota Baru"},
+    {"name": "SD INPRES ROPA", "kecamatan": "Maurole"},
+    {"name": "SD INPRES ROWORENA 2", "kecamatan": "Ende Utara"},
+    {"name": "SD INPRES SOKOLOO", "kecamatan": "Lepembusu Kelisoke"},
+    {"name": "SD INPRES SOKORIA", "kecamatan": "Maurole"},
+    {"name": "SD INPRES TANARHI", "kecamatan": "Nangapanda"},
+    {"name": "SD INPRES TETANDARA", "kecamatan": "Ende Tengah"},
+    {"name": "SD INPRES TIWEREA", "kecamatan": "Nangapanda"},
+    {"name": "SD INPRES WAKA", "kecamatan": "Wewaria"},
+    {"name": "SD INPRES WATUBEWA", "kecamatan": "Wolowaru"},
+    {"name": "SD INPRES WATUJARA", "kecamatan": "Ende Timur"},
+    {"name": "SD INPRES WATUMESI", "kecamatan": "Maurole"},
+    {"name": "SD INPRES WATUMOTO", "kecamatan": "Wolojita"},
+    {"name": "SD INPRES WELAMOSA", "kecamatan": "Wewaria"},
+    {"name": "SD INPRES WEWARIA", "kecamatan": "Wewaria"},
+    {"name": "SD INPRES WOLOARA", "kecamatan": "Kelimutu"},
+    {"name": "SD INPRES WOLOGAI", "kecamatan": "Ende"},
+    {"name": "SD INPRES WOLOJITA", "kecamatan": "Wolojita"},
+    {"name": "SD INPRES WOLOKOLI", "kecamatan": "Wewaria"},
+    {"name": "SD INPRES WOLOLA", "kecamatan": "Lepembusu Kelisoke"},
+    {"name": "SD INPRES WOLOMAGE", "kecamatan": "Wewaria"},
+    {"name": "SD INPRES WOLOOJA 1", "kecamatan": "Wolowaru"},
+    {"name": "SD INPRES WOLOOJA 3", "kecamatan": "Wolowaru"},
+    {"name": "SD INPRES WOLOTOPO", "kecamatan": "Ndona"},
+    {"name": "SD INPRES WOLOWARU 4", "kecamatan": "Wolowaru"},
+    {"name": "SD INPRES WOLOWARU 5", "kecamatan": "Wolowaru"},
+    {"name": "SD INPRES WOLOWONA 1", "kecamatan": "Ende Timur"},
+    {"name": "SD INPRES WOLOWONA 2", "kecamatan": "Ende Timur"},
+    {"name": "SD INPRES WONDA", "kecamatan": "Ndori"},
+    {"name": "SD INPRES WOROJA", "kecamatan": "Ende Utara"},
+    {"name": "SD INPRES WOROPAPA", "kecamatan": "Ende"},
+    {"name": "SD INPRES WUKARIA", "kecamatan": "Wewaria"},
+    {"name": "SD KATOLIK AEBARA", "kecamatan": "Ndori"},
+    {"name": "SD KATOLIK AEFEO", "kecamatan": "Ende"},
+    {"name": "SD KATOLIK AEISA", "kecamatan": "Ende Utara"},
+    {"name": "SD KATOLIK AEKORO", "kecamatan": "Ende"},
+    {"name": "SD KATOLIK AEWORA", "kecamatan": "Maurole"},
+    {"name": "SD KATOLIK ANARANDA", "kecamatan": "Wewaria"},
+    {"name": "SD KATOLIK ASE", "kecamatan": "Lio Timur"},
+    {"name": "SD KATOLIK BOAFEO", "kecamatan": "Maukaro"},
+    {"name": "SD KATOLIK BUUBEI", "kecamatan": "Ende"},
+    {"name": "SD KATOLIK BUUNGENDA", "kecamatan": "Detusoko"},
+    {"name": "SD KATOLIK DEDU", "kecamatan": "Ndona"},
+    {"name": "SD KATOLIK DETUARA", "kecamatan": "Lepembusu Kelisoke"},
+    {"name": "SD KATOLIK DETUBELA 1", "kecamatan": "Wewaria"},
+    {"name": "SD KATOLIK DETUDENU", "kecamatan": "Lepembusu Kelisoke"},
+    {"name": "SD KATOLIK DETUELU", "kecamatan": "Lepembusu Kelisoke"},
+    {"name": "SD KATOLIK DETUKOU", "kecamatan": "Kota Baru"},
+    {"name": "SD KATOLIK DETUMBAWA", "kecamatan": "Ende Timur"},
+    {"name": "SD KATOLIK DETUMBEWA", "kecamatan": "Detukeli"},
+    {"name": "SD KATOLIK DETUPERA", "kecamatan": "Lio Timur"},
+    {"name": "SD KATOLIK DETUWULU", "kecamatan": "Maurole"},
+    {"name": "SD KATOLIK DILE", "kecamatan": "Detusoko"},
+    {"name": "SD KATOLIK EKOAE", "kecamatan": "Wewaria"},
+    {"name": "SD KATOLIK EKOLETA", "kecamatan": "Detusoko"},
+    {"name": "SD KATOLIK ENDE 8", "kecamatan": "Ende Tengah"},
+    {"name": "SD KATOLIK FENDO", "kecamatan": "Lio Timur"},
+    {"name": "SD KATOLIK FUNGAPANDA", "kecamatan": "Detukeli"},
+    {"name": "SD KATOLIK GANA", "kecamatan": "Lio Timur"},
+    {"name": "SD KATOLIK GHAIBHABHA", "kecamatan": "Detukeli"},
+    {"name": "SD KATOLIK HANGALANDE", "kecamatan": "Kota Baru"},
+    {"name": "SD KATOLIK JOGE", "kecamatan": "Maurole"},
+    {"name": "SD KATOLIK JOPU 1", "kecamatan": "Wolowaru"},
+    {"name": "SD KATOLIK JOPU 2", "kecamatan": "Wolowaru"},
+    {"name": "SD KATOLIK JOPU 3", "kecamatan": "Wolowaru"},
+    {"name": "SD KATOLIK KAMUBHEKA", "kecamatan": "Maukaro"},
+    {"name": "SD KATOLIK KANGANARA", "kecamatan": "Detukeli"},
+    {"name": "SD KATOLIK KEDO", "kecamatan": "Lepembusu Kelisoke"},
+    {"name": "SD KATOLIK KEDOGAJA", "kecamatan": "Lepembusu Kelisoke"},
+    {"name": "SD KATOLIK KEKADORI", "kecamatan": "Nangapanda"},
+    {"name": "SD KATOLIK KEKAJODHO", "kecamatan": "Ende"},
+    {"name": "SD KATOLIK KEKANDERE 1", "kecamatan": "Nangapanda"},
+    {"name": "SD KATOLIK KEKANDERE 2", "kecamatan": "Nangapanda"},
+    {"name": "SD KATOLIK KEKASEWA", "kecamatan": "Ndona"},
+    {"name": "SD KATOLIK KEKAWII", "kecamatan": "Ende"},
+    {"name": "SD KATOLIK KOANARA", "kecamatan": "Kelimutu"},
+    {"name": "SD KATOLIK KOMBANDARU", "kecamatan": "Ende"},
+    {"name": "SD KATOLIK KOMBO", "kecamatan": "Wewaria"},
+    {"name": "SD KATOLIK KURULIMBU", "kecamatan": "Ndona Timur"},
+    {"name": "SD KATOLIK LAINILA", "kecamatan": "Ndona"},
+    {"name": "SD KATOLIK LANDOKURA", "kecamatan": "Ndona Timur"},
+    {"name": "SD KATOLIK LIAKAMBA", "kecamatan": "Wolojita"},
+    {"name": "SD KATOLIK LIKANAKA", "kecamatan": "Wolowaru"},
+    {"name": "SD KATOLIK LOBONIKI", "kecamatan": "Kota Baru"},
+    {"name": "SD KATOLIK LOKAOJA", "kecamatan": "Kota Baru"},
+    {"name": "SD KATOLIK LOKOBOKO", "kecamatan": "Ndona"},
+    {"name": "SD KATOLIK MAGEKOBA", "kecamatan": "Detukeli"},
+    {"name": "SD KATOLIK MAGENGURA", "kecamatan": "Ende"},
+    {"name": "SD KATOLIK MARSUDIRINI", "kecamatan": "Detusoko"},
+    {"name": "SD KATOLIK MAUKARO", "kecamatan": "Maukaro"},
+    {"name": "SD KATOLIK MBAKAONDO", "kecamatan": "Maukaro"},
+    {"name": "SD KATOLIK MBOMBA", "kecamatan": "Ende Utara"},
+    {"name": "SD KATOLIK MONDO", "kecamatan": "Ndona"},
+    {"name": "SD KATOLIK MUKUSAKI", "kecamatan": "Wewaria"},
+    {"name": "SD KATOLIK NABE", "kecamatan": "Maukaro"},
+    {"name": "SD KATOLIK NANGAKEO", "kecamatan": "Nangapanda"},
+    {"name": "SD KATOLIK NANGAMBOA", "kecamatan": "Nangapanda"},
+    {"name": "SD KATOLIK NANGAPANDA 1", "kecamatan": "Nangapanda"},
+    {"name": "SD KATOLIK NAZARETH ENDE", "kecamatan": "Ende Timur"},
+    {"name": "SD KATOLIK NDETUKUNE", "kecamatan": "Nangapanda"},
+    {"name": "SD KATOLIK NDONA 1", "kecamatan": "Ndona"},
+    {"name": "SD KATOLIK NDONA 2", "kecamatan": "Ndona"},
+    {"name": "SD KATOLIK NDUARIA", "kecamatan": "Kelimutu"},
+    {"name": "SD KATOLIK NGALUPOLO", "kecamatan": "Ndona"},
+    {"name": "SD KATOLIK NGEBONDANA", "kecamatan": "Lio Timur"},
+    {"name": "SD KATOLIK NGGELA 1", "kecamatan": "Wolojita"},
+    {"name": "SD KATOLIK NGGESADETU", "kecamatan": "Detukeli"},
+    {"name": "SD KATOLIK NIDA", "kecamatan": "Detukeli"},
+    {"name": "SD KATOLIK NIOPANDA", "kecamatan": "Kota Baru"},
+    {"name": "SD KATOLIK NIRANANGA", "kecamatan": "Nangapanda"},
+    {"name": "SD KATOLIK NUABOSI", "kecamatan": "Ende"},
+    {"name": "SD KATOLIK NUAMULU", "kecamatan": "Wolojita"},
+    {"name": "SD KATOLIK NUAMURI 1", "kecamatan": "Kelimutu"},
+    {"name": "SD KATOLIK NUAULU", "kecamatan": "Wolowaru"},
+    {"name": "SD KATOLIK NUAWIKA", "kecamatan": "Lepembusu Kelisoke"},
+    {"name": "SD KATOLIK NUMBA", "kecamatan": "Wewaria"},
+    {"name": "SD KATOLIK OKA", "kecamatan": "Wolowaru"},
+    {"name": "SD KATOLIK ONEKORE 1", "kecamatan": "Ende Tengah"},
+    {"name": "SD KATOLIK ONEKORE 2", "kecamatan": "Ende Tengah"},
+    {"name": "SD KATOLIK PAAPINGGA", "kecamatan": "Ndona Timur"},
+    {"name": "SD KATOLIK PANAMATA", "kecamatan": "Ende"},
+    {"name": "SD KATOLIK PAUMERE", "kecamatan": "Nangapanda"},
+    {"name": "SD KATOLIK PAUPIRE", "kecamatan": "Ende Tengah"},
+    {"name": "SD KATOLIK PEIBENGA", "kecamatan": "Lepembusu Kelisoke"},
+    {"name": "SD KATOLIK PEMO 1", "kecamatan": "Kelimutu"},
+    {"name": "SD KATOLIK PEMO 2", "kecamatan": "Wolowaru"},
+    {"name": "SD KATOLIK PISA TANAAU", "kecamatan": "Lepembusu Kelisoke"},
+    {"name": "SD KATOLIK PISE", "kecamatan": "Kota Baru"},
+    {"name": "SD KATOLIK PISOMBOPO", "kecamatan": "Nangapanda"},
+    {"name": "SD KATOLIK PORA", "kecamatan": "Wolojita"},
+    {"name": "SD KATOLIK PUUBHETO", "kecamatan": "Ende"},
+    {"name": "SD KATOLIK PUUFEO", "kecamatan": "Ende Utara"},
+    {"name": "SD KATOLIK PUUKOU", "kecamatan": "Nangapanda"},
+    {"name": "SD KATOLIK PUUTUGA", "kecamatan": "Ndona"},
+    {"name": "SD KATOLIK RANGA", "kecamatan": "Detusoko"},
+    {"name": "SD KATOLIK RANOKOLO", "kecamatan": "Maurole"},
+    {"name": "SD KATOLIK RATEMBUE", "kecamatan": "Wolowaru"},
+    {"name": "SD KATOLIK RATERORU", "kecamatan": "Detusoko"},
+    {"name": "SD KATOLIK REKA", "kecamatan": "Ndona"},
+    {"name": "SD KATOLIK ROGA", "kecamatan": "Ndona Timur"},
+    {"name": "SD KATOLIK ROWOREKE 1", "kecamatan": "Ende Timur"},
+    {"name": "SD KATOLIK ROWOREKE 2", "kecamatan": "Ende Timur"},
+    {"name": "SD KATOLIK SAGA", "kecamatan": "Detusoko"},
+    {"name": "SD KATOLIK SEULAKO", "kecamatan": "Ndona Timur"},
+    {"name": "SD KATOLIK SOKORIA 1", "kecamatan": "Ndona Timur"},
+    {"name": "SD KATOLIK SOKORIA 2", "kecamatan": "Ndona Timur"},
+    {"name": "SD KATOLIK ST AMBROSIUS ENDE 6", "kecamatan": "Ende Utara"},
+    {"name": "SD KATOLIK ST ANTONIUS ENDE 2", "kecamatan": "Ende Utara"},
+    {"name": "SD KATOLIK ST THERESIA ENDE 3", "kecamatan": "Ende Tengah"},
+    {"name": "SD KATOLIK TANAJEA", "kecamatan": "Nangapanda"},
+    {"name": "SD KATOLIK TENDA", "kecamatan": "Wolojita"},
+    {"name": "SD KATOLIK TOBA", "kecamatan": "Ndona Timur"},
+    {"name": "SD KATOLIK WAGA", "kecamatan": "Wolojita"},
+    {"name": "SD KATOLIK WAKA", "kecamatan": "Wewaria"},
+    {"name": "SD KATOLIK WATUKAMBA", "kecamatan": "Maurole"},
+    {"name": "SD KATOLIK WATUMITE", "kecamatan": "Nangapanda"},
+    {"name": "SD KATOLIK WATUNESO", "kecamatan": "Lio Timur"},
+    {"name": "SD KATOLIK WATUNGGERE", "kecamatan": "Detukeli"},
+    {"name": "SD KATOLIK WATURAKA", "kecamatan": "Kelimutu"},
+    {"name": "SD KATOLIK WATUSIPI", "kecamatan": "Ende Utara"},
+    {"name": "SD KATOLIK WELAMOSA", "kecamatan": "Wewaria"},
+    {"name": "SD KATOLIK WOLOBHETO", "kecamatan": "Lio Timur"},
+    {"name": "SD KATOLIK WOLOFEO", "kecamatan": "Detusoko"},
+    {"name": "SD KATOLIK WOLOGAI DETUSOKO", "kecamatan": "Detusoko"},
+    {"name": "SD KATOLIK WOLOGAI ENDE", "kecamatan": "Ende"},
+    {"name": "SD KATOLIK WOLOGERU", "kecamatan": "Detusoko"},
+    {"name": "SD KATOLIK WOLOJITA", "kecamatan": "Wolojita"},
+    {"name": "SD KATOLIK WOLOKOTA", "kecamatan": "Ndona"},
+    {"name": "SD KATOLIK WOLOLANU", "kecamatan": "Wolojita"},
+    {"name": "SD KATOLIK WOLOLELE A", "kecamatan": "Lio Timur"},
+    {"name": "SD KATOLIK WOLOLELE B", "kecamatan": "Wolowaru"},
+    {"name": "SD KATOLIK WOLOMAGE", "kecamatan": "Detusoko"},
+    {"name": "SD Katolik Wolomota", "kecamatan": "Lio Timur"},
+    {"name": "SD KATOLIK WOLOMUKU", "kecamatan": "Detukeli"},
+    {"name": "SD KATOLIK WOLONDOPO 1", "kecamatan": "Wolowaru"},
+    {"name": "SD KATOLIK WOLONDOPO 2", "kecamatan": "Detusoko"},
+    {"name": "SD KATOLIK WOLOORA", "kecamatan": "Ende"},
+    {"name": "SD KATOLIK WOLOSAMBI", "kecamatan": "Lio Timur"},
+    {"name": "SD KATOLIK WOLOSOKO", "kecamatan": "Wolowaru"},
+    {"name": "SD KATOLIK WOLOTOLO", "kecamatan": "Detusoko"},
+    {"name": "SD KATOLIK WOLOTOPO 1", "kecamatan": "Ndona"},
+    {"name": "SD KATOLIK WOLOTOPO 2", "kecamatan": "Ndona"},
+    {"name": "SD KATOLIK WOLOWARU 1", "kecamatan": "Wolowaru"},
+    {"name": "SD KATOLIK WOLOWARU 2", "kecamatan": "Wolowaru"},
+    {"name": "SD KATOLIK WOLOWUSU", "kecamatan": "Ndona"},
+    {"name": "SD KATOLIK WONDA", "kecamatan": "Ndori"},
+    {"name": "SD KATOLIK WOROMBERA", "kecamatan": "Ende"},
+    {"name": "SD NEGERI ANAREWA", "kecamatan": "Pulau Ende"},
+    {"name": "SD NEGERI DETUBELA 2", "kecamatan": "Lepembusu Kelisoke"},
+    {"name": "SD NEGERI EKOREKO", "kecamatan": "Pulau Ende"},
+    {"name": "SD NEGERI ENDE 1", "kecamatan": "Ende Utara"},
+    {"name": "SD NEGERI ENDE 5", "kecamatan": "Ende Tengah"},
+    {"name": "SD NEGERI IPI", "kecamatan": "Ende Selatan"},
+    {"name": "SD NEGERI KEDEBODU", "kecamatan": "Ende Timur"},
+    {"name": "SD NEGERI KEDOBORO", "kecamatan": "Maurole"},
+    {"name": "SD NEGERI KOBALEBA", "kecamatan": "Maukaro"},
+    {"name": "SD NEGERI KURUPOKE", "kecamatan": "Detukeli"},
+    {"name": "SD NEGERI LELU", "kecamatan": "Lio Timur"},
+    {"name": "SD NEGERI MALAARA", "kecamatan": "Nangapanda"},
+    {"name": "SD NEGERI MARANUA", "kecamatan": "Ende"},
+    {"name": "SD NEGERI MAUNGGORA", "kecamatan": "Nangapanda"},
+    {"name": "SD NEGERI MOKEASA", "kecamatan": "Ende"},
+    {"name": "SD NEGERI MOLEKELISAMBA", "kecamatan": "Ndori"},
+    {"name": "SD NEGERI MOLETEBOSAMA", "kecamatan": "Wolowaru"},
+    {"name": "SD NEGERI MOLUTANGGA", "kecamatan": "Wewaria"},
+    {"name": "SD NEGERI NUSANGGALA", "kecamatan": "Kota Baru"},
+    {"name": "SD NEGERI OJA", "kecamatan": "Nangapanda"},
+    {"name": "SD NEGERI PUUTARA", "kecamatan": "Pulau Ende"},
+    {"name": "SD NEGERI RATENGGOJI", "kecamatan": "Lepembusu Kelisoke"},
+    {"name": "SD NEGERI ROJA 1", "kecamatan": "Ende Selatan"},
+    {"name": "SD NEGERI ROJA 3", "kecamatan": "Ende Selatan"},
+    {"name": "SD NEGERI ROJA 6", "kecamatan": "Ende Selatan"},
+    {"name": "SD NEGERI RUTU JEJA", "kecamatan": "Lepembusu Kelisoke"},
+    {"name": "SD NEGERI SARELAKA", "kecamatan": "Lepembusu Kelisoke"},
+    {"name": "SD NEGERI SOGOROGA", "kecamatan": "Ende"},
+    {"name": "SD NEGERI TURUNALU", "kecamatan": "Detusoko"},
+    {"name": "SD NEGERI UMANUBA", "kecamatan": "Nangapanda"},
+    {"name": "SD NEGERI WATUBARA", "kecamatan": "Wewaria"},
+    {"name": "SD NEGERI WIWIPEMO", "kecamatan": "Wolojita"},
+    {"name": "SD NEGERI WOIMITE", "kecamatan": "Wewaria"},
+    {"name": "SD NEGERI WOLOARA", "kecamatan": "Kelimutu"},
+    {"name": "SD NEGERI WOLOGAWI", "kecamatan": "Wolojita"},
+    {"name": "SD NEGERI WOLOHEPO", "kecamatan": "Wolowaru"},
+    {"name": "SD NEGERI WOLOMONI", "kecamatan": "Detusoko"},
+    {"name": "SD NEGERI WOLONIO", "kecamatan": "Lio Timur"},
+    {"name": "SD NEGERI WOLOOJA 2", "kecamatan": "Wewaria"},
+    {"name": "SD NEGERI WOLOWARU 3", "kecamatan": "Wolowaru"},
+    {"name": "SD SWASTA MUHAMMADYAH ENDE", "kecamatan": "Ende Utara"},
+    {"name": "SDN NAKAWARA", "kecamatan": "Ende"},
+    {"name": "SDN ULU DALA", "kecamatan": "Maurole"}
+];
+
+// ============================================
+// 3. LOGIKA APLIKASI
+// ============================================
 const App = {
-    // ============================================
-    // 1. KONFIGURASI FIREBASE
-    // ============================================
-    config: {
-        apiKey: "AIzaSyBYb9zFaKSASEmpQK2NKChv7aj9tSTTGIM",
-        authDomain: "galeri-kegiatan-ende.firebaseapp.com",
-        projectId: "galeri-kegiatan-ende",
-        storageBucket: "galeri-kegiatan-ende.firebasestorage.app",
-        messagingSenderId: "1036576141299",
-        appId: "1:1036576141299:web:89d70636e1f91850916c86",
-        measurementId: "G-9QTLLP3YC3"
-    },
-
-    // ============================================
-    // 2. STATE APLIKASI
-    // ============================================
-    db: null,
-    auth: null,
-    storage: null,
     currentUser: null,
     selectedPhotos: [],
     debounceTimer: null,
 
-    // ============================================
-    // 3. INISIALISASI APLIKASI
-    // ============================================
     init() {
-        // Initialize Firebase
-        firebase.initializeApp(this.config);
-        this.auth = firebase.auth();
-        this.db = firebase.firestore();
-        this.storage = firebase.storage();
-
-        // Set default tanggal hari ini
+        // Set tanggal default
         document.getElementById('upload-date').valueAsDate = new Date();
-
-        // Auth State Listener
-        this.auth.onAuthStateChanged(user => {
+        
+        // Auth listener
+        auth.onAuthStateChanged(user => {
             this.currentUser = user;
             this.updateUIBasedOnAuth();
         });
 
-        // Load daftar sekolah untuk filter
+        // Load sekolah ke dropdown
         this.loadSchools();
 
-        console.log("✅ Aplikasi Galeri SD Ende berhasil diinisialisasi.");
+        // Theme toggle
+        this.initTheme();
+
+        // Mobile menu
+        this.initMobileMenu();
+
+        // Nav menu click
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = item.dataset.page;
+                this.navigate(page);
+            });
+        });
     },
 
-    // ============================================
-    // 4. NAVIGASI HALAMAN
-    // ============================================
+    // ========== THEME ==========
+    initTheme() {
+        const saved = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', saved);
+        this.updateThemeIcon(saved);
+
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            this.updateThemeIcon(next);
+        });
+    },
+
+    updateThemeIcon(theme) {
+        const icon = document.querySelector('#theme-toggle i');
+        icon.className = theme === 'light' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+    },
+
+    // ========== MOBILE MENU ==========
+    initMobileMenu() {
+        const toggle = document.getElementById('mobile-toggle');
+        const menu = document.getElementById('nav-menu');
+        toggle.addEventListener('click', () => {
+            menu.classList.toggle('active');
+        });
+    },
+
+    // ========== NAVIGATION ==========
     navigate(pageId) {
-        // Cek akses upload
         if (pageId === 'upload' && !this.currentUser) {
             this.showToast('Silakan login terlebih dahulu', 'error');
             pageId = 'login';
         }
 
-        // Sembunyikan semua halaman
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
 
-        // Tampilkan halaman yang dipilih
         document.getElementById(`page-${pageId}`).classList.add('active');
-        const navBtn = document.getElementById(`nav-${pageId}`);
-        if (navBtn) navBtn.classList.add('active');
+        const navItem = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+        if (navItem) navItem.classList.add('active');
+
+        // Tutup mobile menu
+        document.getElementById('nav-menu').classList.remove('active');
+
+        // Load stats jika halaman statistik
+        if (pageId === 'stats') this.loadStats();
+
+        // Scroll ke atas
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     },
 
     updateUIBasedOnAuth() {
-        const userArea = document.getElementById('user-area');
-        const userEmail = document.getElementById('user-email');
-        const navLogin = document.getElementById('nav-login');
+        const userProfile = document.getElementById('user-profile');
+        const userName = document.getElementById('user-name');
+        const btnLogin = document.getElementById('btn-login');
         const navUpload = document.getElementById('nav-upload');
 
         if (this.currentUser) {
-            userArea.style.display = 'flex';
-            userEmail.textContent = this.currentUser.email;
-            navLogin.style.display = 'none';
-            navUpload.style.display = 'inline-flex';
+            userProfile.style.display = 'flex';
+            userName.textContent = this.currentUser.email.split('@')[0];
+            btnLogin.style.display = 'none';
+            navUpload.style.display = 'flex';
         } else {
-            userArea.style.display = 'none';
-            navLogin.style.display = 'inline-flex';
+            userProfile.style.display = 'none';
+            btnLogin.style.display = 'flex';
             navUpload.style.display = 'none';
             this.navigate('gallery');
         }
     },
 
-    // ============================================
-    // 5. AUTHENTICATION (LOGIN/LOGOUT)
-    // ============================================
+    // ========== AUTH ==========
     async handleLogin(event) {
         event.preventDefault();
         const email = document.getElementById('login-email').value.trim();
         const password = document.getElementById('login-password').value;
 
         try {
-            await this.auth.signInWithEmailAndPassword(email, password);
+            await auth.signInWithEmailAndPassword(email, password);
             this.showToast('Login berhasil! Selamat datang.', 'success');
             this.navigate('upload');
             document.getElementById('login-form').reset();
         } catch (error) {
-            this.showToast(this.getAuthErrorMessage(error.code), 'error');
+            this.showToast('Email atau password salah.', 'error');
         }
     },
 
     handleLogout() {
         if (confirm('Apakah Anda yakin ingin keluar?')) {
-            this.auth.signOut();
+            auth.signOut();
             this.showToast('Anda telah keluar.', 'success');
         }
     },
 
-    getAuthErrorMessage(code) {
-        const messages = {
-            'auth/invalid-email': 'Format email tidak valid.',
-            'auth/user-disabled': 'Akun ini telah dinonaktifkan.',
-            'auth/user-not-found': 'Email tidak terdaftar.',
-            'auth/wrong-password': 'Password salah.',
-            'auth/too-many-requests': 'Terlalu banyak percobaan. Coba lagi nanti.',
-            'auth/invalid-credential': 'Email atau password salah.'
-        };
-        return messages[code] || 'Terjadi kesalahan saat login.';
+    // ========== LOAD SCHOOLS ==========
+    loadSchools() {
+        schoolsData.sort((a, b) => a.name.localeCompare(b.name));
+        
+        const filterSelect = document.getElementById('filter-sekolah');
+        const uploadSelect = document.getElementById('upload-school');
+        
+        schoolsData.forEach(school => {
+            const opt1 = document.createElement('option');
+            opt1.value = school.name;
+            opt1.textContent = school.name;
+            filterSelect.appendChild(opt1);
+
+            const opt2 = document.createElement('option');
+            opt2.value = school.name;
+            opt2.textContent = school.name;
+            uploadSelect.appendChild(opt2);
+        });
     },
 
-    // ============================================
-    // 6. LOAD DAFTAR SEKOLAH
-    // ============================================
-    async loadSchools() {
-        try {
-            const snapshot = await this.db.collection('schools').orderBy('name').get();
-            const select = document.getElementById('filter-sekolah');
-
-            // Kosongkan opsi kecuali yang pertama
-            select.innerHTML = '<option value="">Semua Sekolah</option>';
-
-            if (snapshot.empty) {
-                // Fallback: sekolah hardcoded jika Firestore kosong
-                const fallbackSchools = [
-                    "SD NEGERI 1 ENDE",
-                    "SD INPRES AEDARI",
-                    "SD KATOLIK ENDE 8"
-                ];
-                fallbackSchools.forEach(school => {
-                    const option = document.createElement('option');
-                    option.value = school;
-                    option.textContent = school;
-                    select.appendChild(option);
-                });
-                console.log("⚠️ Menggunakan daftar sekolah fallback.");
-            } else {
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const option = document.createElement('option');
-                    option.value = data.name;
-                    option.textContent = data.name;
-                    select.appendChild(option);
-                });
-                console.log(`✅ ${snapshot.size} sekolah dimuat dari database.`);
-            }
-        } catch (error) {
-            console.error("❌ Gagal memuat daftar sekolah:", error);
-        }
-    },
-
-    // ============================================
-    // 7. PENANGANAN FOTO & KOMPRESI
-    // ============================================
+    // ========== PHOTO HANDLING ==========
     async handlePhotoSelect(event) {
         const files = Array.from(event.target.files);
         if (files.length > 5) {
@@ -183,7 +520,6 @@ const App = {
         const previewContainer = document.getElementById('photo-preview');
         previewContainer.innerHTML = '';
         this.selectedPhotos = [];
-
         this.showToast('Sedang mengompres foto...', 'success');
 
         for (let file of files) {
@@ -209,7 +545,6 @@ const App = {
                 };
                 reader.readAsDataURL(compressedFile);
             } catch (error) {
-                console.error(error);
                 this.showToast(`Gagal memproses: ${file.name}`, 'error');
             }
         }
@@ -221,9 +556,7 @@ const App = {
         button.parentElement.remove();
     },
 
-    // ============================================
-    // 8. UPLOAD KEGIATAN
-    // ============================================
+    // ========== UPLOAD ==========
     async handleUpload(event) {
         event.preventDefault();
         if (!this.currentUser) return;
@@ -237,7 +570,6 @@ const App = {
             youtube: document.getElementById('upload-youtube').value.trim()
         };
 
-        // Validasi YouTube
         let youtubeId = null;
         if (form.youtube) {
             const match = form.youtube.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
@@ -253,26 +585,22 @@ const App = {
             return;
         }
 
-        // Tampilkan overlay loading
         document.getElementById('upload-overlay').style.display = 'flex';
 
         try {
             const photoUrls = [];
             const safeSchoolName = form.school.replace(/\s+/g, '-').toLowerCase();
 
-            // Upload foto ke Firebase Storage
             for (let i = 0; i < this.selectedPhotos.length; i++) {
                 const photo = this.selectedPhotos[i];
                 const fileName = `${safeSchoolName}/${Date.now()}_${i}_${photo.name}`;
-                const storageRef = this.storage.ref(`activities/${fileName}`);
-
+                const storageRef = storage.ref(`activities/${fileName}`);
                 await storageRef.put(photo);
                 const url = await storageRef.getDownloadURL();
                 photoUrls.push(url);
             }
 
-            // Simpan metadata ke Firestore
-            await this.db.collection('activities').add({
+            await db.collection('activities').add({
                 schoolName: form.school,
                 title: form.title,
                 date: form.date,
@@ -287,33 +615,25 @@ const App = {
             });
 
             this.showToast('✅ Dokumentasi berhasil diupload!', 'success');
-
-            // Reset form
             document.getElementById('upload-form').reset();
             document.getElementById('photo-preview').innerHTML = '';
             this.selectedPhotos = [];
             document.getElementById('upload-date').valueAsDate = new Date();
-
-            // Pindah ke galeri
             this.navigate('gallery');
             this.loadGalleryWithFilters({});
 
         } catch (error) {
-            console.error("❌ Upload Error:", error);
+            console.error(error);
             this.showToast('Gagal mengupload: ' + error.message, 'error');
         } finally {
             document.getElementById('upload-overlay').style.display = 'none';
         }
     },
 
-    // ============================================
-    // 9. FILTER & GALERI
-    // ============================================
+    // ========== FILTERS ==========
     debounceFilter() {
         clearTimeout(this.debounceTimer);
-        this.debounceTimer = setTimeout(() => {
-            this.applyFilters();
-        }, 500);
+        this.debounceTimer = setTimeout(() => this.applyFilters(), 500);
     },
 
     resetFilters() {
@@ -333,8 +653,6 @@ const App = {
         const filterTahun = document.getElementById('filter-tahun').value;
         const filterTanggalUpload = document.getElementById('filter-tanggal-upload').value;
 
-        // Update info filter
-        const filterInfo = document.getElementById('filter-info');
         const activeFilters = [];
         if (searchText) activeFilters.push(`Pencarian: "${searchText}"`);
         if (filterSekolah) activeFilters.push(`Sekolah: ${filterSekolah}`);
@@ -342,30 +660,24 @@ const App = {
         if (filterTahun) activeFilters.push(`Tahun: ${filterTahun}`);
         if (filterTanggalUpload) activeFilters.push(`Tanggal Upload: ${filterTanggalUpload}`);
 
-        if (activeFilters.length > 0) {
-            filterInfo.innerHTML = `<i class="fa-solid fa-filter"></i><span>Filter aktif: ${activeFilters.join(', ')}</span>`;
-        } else {
-            filterInfo.innerHTML = `<i class="fa-solid fa-info-circle"></i><span>Menampilkan semua kegiatan</span>`;
-        }
+        const filterInfo = document.getElementById('filter-info');
+        filterInfo.innerHTML = activeFilters.length > 0 
+            ? `<i class="fa-solid fa-filter"></i><span>Filter aktif: ${activeFilters.join(', ')}</span>`
+            : `<i class="fa-solid fa-circle-info"></i><span>Menampilkan semua kegiatan</span>`;
 
-        this.loadGalleryWithFilters({
-            searchText,
-            filterSekolah,
-            filterBulan,
-            filterTahun,
-            filterTanggalUpload
-        });
+        this.loadGalleryWithFilters({ searchText, filterSekolah, filterBulan, filterTahun, filterTanggalUpload });
     },
 
     getBulanName(bulanNum) {
-        const bulanNames = {
-            '1': 'Januari', '2': 'Februari', '3': 'Maret', '4': 'April',
-            '5': 'Mei', '6': 'Juni', '7': 'Juli', '8': 'Agustus',
-            '9': 'September', '10': 'Oktober', '11': 'November', '12': 'Desember'
+        const names = {
+            '1':'Januari','2':'Februari','3':'Maret','4':'April',
+            '5':'Mei','6':'Juni','7':'Juli','8':'Agustus',
+            '9':'September','10':'Oktober','11':'November','12':'Desember'
         };
-        return bulanNames[bulanNum] || '';
+        return names[bulanNum] || '';
     },
 
+    // ========== GALLERY ==========
     async loadGalleryWithFilters(filters = {}) {
         const container = document.getElementById('gallery-container');
         const skeleton = document.getElementById('gallery-skeleton');
@@ -375,8 +687,7 @@ const App = {
         skeleton.innerHTML = Array(6).fill('<div class="skeleton skeleton-card"></div>').join('');
 
         try {
-            // Query dasar: ambil 100 data terbaru
-            const snapshot = await this.db.collection('activities')
+            const snapshot = await db.collection('activities')
                 .orderBy('createdAt', 'desc')
                 .limit(100)
                 .get();
@@ -387,68 +698,45 @@ const App = {
                 container.innerHTML = `
                     <div class="empty-state">
                         <i class="fa-regular fa-folder-open"></i>
-                        <p>Belum ada data kegiatan.</p>
+                        <h3>Belum Ada Kegiatan</h3>
+                        <p>Jadilah yang pertama mengupload dokumentasi!</p>
                     </div>`;
                 return;
             }
 
             let filteredDocs = [];
-
             snapshot.forEach(doc => {
                 const data = doc.data();
                 let pass = true;
 
-                // Filter 1: Search Text (judul atau deskripsi)
                 if (filters.searchText) {
                     const title = (data.title || '').toLowerCase();
                     const desc = (data.description || '').toLowerCase();
-                    if (!title.includes(filters.searchText) && !desc.includes(filters.searchText)) {
-                        pass = false;
-                    }
+                    if (!title.includes(filters.searchText) && !desc.includes(filters.searchText)) pass = false;
                 }
+                if (filters.filterSekolah && data.schoolName !== filters.filterSekolah) pass = false;
 
-                // Filter 2: Nama Sekolah
-                if (filters.filterSekolah && data.schoolName !== filters.filterSekolah) {
-                    pass = false;
-                }
-
-                // Filter 3 & 4: Bulan dan Tahun (dari field 'date')
                 if (filters.filterBulan || filters.filterTahun) {
                     if (data.date) {
                         const dateObj = new Date(data.date);
-                        const docBulan = (dateObj.getMonth() + 1).toString();
-                        const docTahun = dateObj.getFullYear().toString();
-
-                        if (filters.filterBulan && docBulan !== filters.filterBulan) {
-                            pass = false;
-                        }
-                        if (filters.filterTahun && docTahun !== filters.filterTahun) {
-                            pass = false;
-                        }
-                    } else {
-                        pass = false;
-                    }
+                        if (filters.filterBulan && (dateObj.getMonth() + 1).toString() !== filters.filterBulan) pass = false;
+                        if (filters.filterTahun && dateObj.getFullYear().toString() !== filters.filterTahun) pass = false;
+                    } else { pass = false; }
                 }
 
-                // Filter 5: Tanggal Upload (dari field 'createdAt')
                 if (filters.filterTanggalUpload && data.createdAt) {
-                    const uploadDate = data.createdAt.toDate();
-                    const uploadDateStr = uploadDate.toISOString().split('T')[0];
-                    if (uploadDateStr !== filters.filterTanggalUpload) {
-                        pass = false;
-                    }
+                    const uploadDateStr = data.createdAt.toDate().toISOString().split('T')[0];
+                    if (uploadDateStr !== filters.filterTanggalUpload) pass = false;
                 }
 
-                if (pass) {
-                    filteredDocs.push({ id: doc.id, data });
-                }
+                if (pass) filteredDocs.push({ id: doc.id, data });
             });
 
-            // Tampilkan hasil
             if (filteredDocs.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <i class="fa-solid fa-magnifying-glass"></i>
+                        <h3>Tidak Ada Hasil</h3>
                         <p>Tidak ada kegiatan yang cocok dengan filter.</p>
                     </div>`;
                 return;
@@ -457,19 +745,27 @@ const App = {
             filteredDocs.forEach(doc => {
                 const data = doc.data;
                 const thumb = data.photos[0];
-                const dateStr = data.date ? new Date(data.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
-
+                const dateStr = data.date 
+                    ? new Date(data.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) 
+                    : '-';
+                
                 const card = document.createElement('div');
                 card.className = 'gallery-card';
                 card.innerHTML = `
-                    <img src="${thumb}" alt="${data.title}" loading="lazy">
+                    <div class="gallery-image-wrapper">
+                        <img src="${thumb}" alt="${data.title}" loading="lazy">
+                    </div>
                     <div class="gallery-content">
                         <h4>${data.title}</h4>
-                        <p style="color: var(--primary); font-weight: 600; font-size: 0.9rem;">${data.schoolName}</p>
-                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
-                            <i class="fa-regular fa-calendar"></i> ${dateStr}
-                        </p>
-                        ${data.youtubeId ? `<p style="margin-top: 0.5rem;"><a href="https://youtu.be/${data.youtubeId}" target="_blank" style="color: var(--danger); text-decoration: none;"><i class="fa-brands fa-youtube"></i> Tonton Video</a></p>` : ''}
+                        <p class="gallery-school"><i class="fa-solid fa-school"></i> ${data.schoolName}</p>
+                        <p class="gallery-date"><i class="fa-regular fa-calendar"></i> ${dateStr}</p>
+                        ${data.youtubeId ? `
+                            <div class="gallery-video">
+                                <a href="https://youtu.be/${data.youtubeId}" target="_blank">
+                                    <i class="fa-brands fa-youtube"></i> Tonton Video
+                                </a>
+                            </div>
+                        ` : ''}
                         <div class="gallery-meta">
                             <span class="badge">${data.category}</span>
                         </div>
@@ -479,39 +775,98 @@ const App = {
             });
 
             this.showToast(`Ditemukan ${filteredDocs.length} kegiatan`, 'success');
-
         } catch (error) {
-            console.error("❌ Filter Error:", error);
             skeleton.style.display = 'none';
             container.innerHTML = `
-                <div class="empty-state" style="color: var(--danger);">
+                <div class="empty-state">
                     <i class="fa-solid fa-triangle-exclamation"></i>
-                    <p>Gagal memuat data: ${error.message}</p>
+                    <h3>Gagal Memuat Data</h3>
+                    <p>${error.message}</p>
                 </div>`;
         }
     },
 
-    // Alias untuk tombol "Muat Data"
-    async loadGallery() {
-        await this.loadGalleryWithFilters({});
+    // ========== STATISTICS ==========
+    async loadStats() {
+        try {
+            const snapshot = await db.collection('activities').get();
+            
+            let totalKegiatan = 0;
+            let totalFoto = 0;
+            let totalVideo = 0;
+            const kategoriCount = {};
+            const sekolahCount = {};
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                totalKegiatan++;
+                totalFoto += (data.photos || []).length;
+                if (data.youtubeId) totalVideo++;
+
+                const kat = data.category || 'Lainnya';
+                kategoriCount[kat] = (kategoriCount[kat] || 0) + 1;
+
+                const sch = data.schoolName || 'Tidak Diketahui';
+                sekolahCount[sch] = (sekolahCount[sch] || 0) + 1;
+            });
+
+            // Update stat cards
+            document.getElementById('stat-kegiatan').textContent = totalKegiatan;
+            document.getElementById('stat-foto').textContent = totalFoto;
+            document.getElementById('stat-video').textContent = totalVideo;
+
+            // Kategori stats
+            const katContainer = document.getElementById('kategori-stats');
+            if (Object.keys(kategoriCount).length === 0) {
+                katContainer.innerHTML = '<p class="empty-text">Belum ada data</p>';
+            } else {
+                katContainer.innerHTML = Object.entries(kategoriCount)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([name, count]) => `
+                        <div class="kategori-item">
+                            <span class="kategori-name">${name}</span>
+                            <span class="kategori-count">${count}</span>
+                        </div>
+                    `).join('');
+            }
+
+            // Top sekolah
+            const topContainer = document.getElementById('top-sekolah');
+            const topSekolah = Object.entries(sekolahCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+            
+            if (topSekolah.length === 0) {
+                topContainer.innerHTML = '<p class="empty-text">Belum ada data</p>';
+            } else {
+                topContainer.innerHTML = topSekolah.map(([name, count], idx) => `
+                    <div class="top-item">
+                        <span class="top-name">${idx + 1}. ${name}</span>
+                        <span class="top-count">${count}</span>
+                    </div>
+                `).join('');
+            }
+
+        } catch (error) {
+            console.error('Stats error:', error);
+        }
     },
 
-    // ============================================
-    // 10. UTILITY: TOAST NOTIFICATION
-    // ============================================
+    // ========== TOAST ==========
     showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-
-        const icon = type === 'success'
-            ? '<i class="fa-solid fa-circle-check" style="color: var(--success);"></i>'
-            : '<i class="fa-solid fa-circle-xmark" style="color: var(--danger);"></i>';
-
-        toast.innerHTML = `${icon} <span>${message}</span>`;
+        
+        const icons = {
+            success: '<i class="fa-solid fa-circle-check" style="color: var(--success);"></i>',
+            error: '<i class="fa-solid fa-circle-xmark" style="color: var(--danger);"></i>',
+            warning: '<i class="fa-solid fa-triangle-exclamation" style="color: var(--warning);"></i>'
+        };
+        
+        toast.innerHTML = `${icons[type] || icons.success} <span>${message}</span>`;
         container.appendChild(toast);
-
-        // Hapus setelah 4 detik
+        
         setTimeout(() => {
             toast.style.opacity = '0';
             toast.style.transform = 'translateX(100%)';
@@ -520,9 +875,5 @@ const App = {
     }
 };
 
-// ============================================
-// START APLIKASI
-// ============================================
-document.addEventListener('DOMContentLoaded', () => {
-    App.init();
-});
+// Start App
+document.addEventListener('DOMContentLoaded', () => App.init());
