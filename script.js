@@ -17,7 +17,7 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 
 // ============================================
-// 2. DATA 334 SEKOLAH KABUPATEN ENDE
+// 2. DATA 334 SEKOLAH (Untuk Filter di Galeri)
 // ============================================
 const schoolsData = [
     {"name": "SD GMIT ENDE 4", "kecamatan": "Ende Utara"},
@@ -361,6 +361,8 @@ const schoolsData = [
 // ============================================
 const App = {
     currentUser: null,
+    userSchool: null, // Sekolah yang sedang login
+    userRole: null, // Role: operator atau admin
     selectedPhotos: [],
     debounceTimer: null,
     slideInterval: null,
@@ -372,7 +374,13 @@ const App = {
         
         auth.onAuthStateChanged(user => {
             this.currentUser = user;
-            this.updateUIBasedOnAuth();
+            if (user) {
+                this.loadOperatorData(user.email);
+            } else {
+                this.userSchool = null;
+                this.userRole = null;
+                this.updateUIBasedOnAuth();
+            }
         });
 
         this.loadSchools();
@@ -382,6 +390,28 @@ const App = {
         this.initNavMenu();
         
         console.log('✅ Aplikasi Galeri SD Ende berhasil diinisialisasi');
+    },
+
+    // ========== LOAD DATA OPERATOR ==========
+    async loadOperatorData(email) {
+        try {
+            const doc = await db.collection('operators').doc(email).get();
+            if (doc.exists) {
+                const data = doc.data();
+                this.userSchool = data.schoolName;
+                this.userRole = data.role || 'operator';
+                console.log(`✅ Operator: ${email} | Sekolah: ${this.userSchool} | Role: ${this.userRole}`);
+            } else {
+                this.userSchool = null;
+                this.userRole = null;
+                this.showToast('Akun Anda belum terdaftar sebagai operator sekolah.', 'error');
+                auth.signOut();
+            }
+            this.updateUIBasedOnAuth();
+        } catch (error) {
+            console.error('Error loading operator data:', error);
+            this.showToast('Gagal memuat data operator.', 'error');
+        }
     },
 
     // ========== THEME TOGGLE ==========
@@ -456,16 +486,34 @@ const App = {
         const userName = document.getElementById('user-name');
         const btnLogin = document.getElementById('btn-login');
         const navUpload = document.getElementById('nav-upload');
+        const uploadSchoolSelect = document.getElementById('upload-school');
 
-        if (this.currentUser) {
+        if (this.currentUser && this.userSchool) {
             if (userProfile) userProfile.style.display = 'flex';
-            if (userName) userName.textContent = this.currentUser.email.split('@')[0];
+            if (userName) userName.textContent = this.userSchool;
             if (btnLogin) btnLogin.style.display = 'none';
             if (navUpload) navUpload.style.display = 'flex';
+
+            // Update dropdown upload: hanya tampilkan sekolah yang login
+            if (uploadSchoolSelect) {
+                uploadSchoolSelect.innerHTML = '';
+                const option = document.createElement('option');
+                option.value = this.userSchool;
+                option.textContent = this.userSchool;
+                option.selected = true;
+                uploadSchoolSelect.appendChild(option);
+                uploadSchoolSelect.disabled = true; // Tidak bisa diganti
+            }
         } else {
             if (userProfile) userProfile.style.display = 'none';
             if (btnLogin) btnLogin.style.display = 'flex';
             if (navUpload) navUpload.style.display = 'none';
+            
+            // Reset dropdown
+            if (uploadSchoolSelect) {
+                uploadSchoolSelect.innerHTML = '<option value="">-- Pilih Sekolah --</option>';
+                uploadSchoolSelect.disabled = false;
+            }
         }
     },
 
@@ -524,9 +572,7 @@ const App = {
 
         try {
             await auth.signInWithEmailAndPassword(email, password);
-            this.showToast('Login berhasil! Selamat datang.', 'success');
-            this.navigate('upload');
-            document.getElementById('login-form').reset();
+            this.showToast('Login berhasil! Memuat data sekolah...', 'success');
         } catch (error) {
             this.showToast('Email atau password salah.', 'error');
         }
@@ -539,24 +585,19 @@ const App = {
         }
     },
 
-    // ========== LOAD SCHOOLS ==========
+    // ========== LOAD SCHOOLS (Untuk Filter Galeri) ==========
     loadSchools() {
         schoolsData.sort((a, b) => a.name.localeCompare(b.name));
         
         const filterSelect = document.getElementById('filter-sekolah');
-        const uploadSelect = document.getElementById('upload-school');
-        
-        schoolsData.forEach(school => {
-            const opt1 = document.createElement('option');
-            opt1.value = school.name;
-            opt1.textContent = school.name;
-            if (filterSelect) filterSelect.appendChild(opt1);
-
-            const opt2 = document.createElement('option');
-            opt2.value = school.name;
-            opt2.textContent = school.name;
-            if (uploadSelect) uploadSelect.appendChild(opt2);
-        });
+        if (filterSelect) {
+            schoolsData.forEach(school => {
+                const opt = document.createElement('option');
+                opt.value = school.name;
+                opt.textContent = school.name;
+                filterSelect.appendChild(opt);
+            });
+        }
     },
 
     // ========== PHOTO HANDLING ==========
@@ -610,10 +651,13 @@ const App = {
     // ========== UPLOAD ==========
     async handleUpload(event) {
         event.preventDefault();
-        if (!this.currentUser) return;
+        if (!this.currentUser || !this.userSchool) {
+            this.showToast('Anda belum terdaftar sebagai operator sekolah.', 'error');
+            return;
+        }
 
         const form = {
-            school: document.getElementById('upload-school').value,
+            school: this.userSchool, // Otomatis dari data operator
             title: document.getElementById('upload-title').value.trim(),
             date: document.getElementById('upload-date').value,
             category: document.getElementById('upload-category').value,
