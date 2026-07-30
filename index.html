@@ -55,37 +55,77 @@
     
     <main class="container">
         <!-- PAGE 1: GALERI -->
-        <section id="page-gallery" class="page active">
-            <div class="card filter-card">
-                <h3><i class="fa-solid fa-filter"></i> Filter Kegiatan</h3>
-                <div class="filter-grid">
-                    <div class="input-group">
-                        <i class="fa-solid fa-search input-icon"></i>
-                        <input type="text" id="search-school" placeholder="Cari nama sekolah...">
-                    </div>
-                    <select id="filter-kategori">
-                        <option value="">Semua Kategori</option>
-                        <option value="Upacara">Upacara</option>
-                        <option value="Lomba">Lomba</option>
-                        <option value="PBM">Kegiatan Belajar</option>
-                        <option value="Ekstrakurikuler">Ekstrakurikuler</option>
-                        <option value="Sarpras">Sarana Prasarana</option>
-                    </select>
-                    <button class="btn btn-primary" onclick="App.loadGallery()">Muat Data</button>
+<section id="page-gallery" class="page active">
+    <div class="card filter-card">
+        <h3><i class="fa-solid fa-filter"></i> Filter Kegiatan</h3>
+        
+        <div class="filter-grid-2">
+            <!-- Baris 1: Search & Sekolah -->
+            <div class="filter-row">
+                <div class="input-group">
+                    <i class="fa-solid fa-search input-icon"></i>
+                    <input type="text" id="search-text" placeholder="Cari judul kegiatan..." oninput="App.debounceFilter()">
                 </div>
+                
+                <select id="filter-sekolah" onchange="App.applyFilters()">
+                    <option value="">Semua Sekolah</option>
+                    <!-- Akan di-populate dari Firestore -->
+                </select>
             </div>
             
-            <div id="gallery-skeleton" class="gallery-grid" style="display: none;">
-                <!-- Skeleton loaders will be injected here -->
-            </div>
-            
-            <div class="gallery-grid" id="gallery-container">
-                <div class="empty-state">
-                    <i class="fa-regular fa-folder-open"></i>
-                    <p>Klik "Muat Data" untuk melihat kegiatan terbaru.</p>
+            <!-- Baris 2: Bulan, Tahun, Tanggal Upload -->
+            <div class="filter-row">
+                <select id="filter-bulan" onchange="App.applyFilters()">
+                    <option value="">Semua Bulan</option>
+                    <option value="1">Januari</option>
+                    <option value="2">Februari</option>
+                    <option value="3">Maret</option>
+                    <option value="4">April</option>
+                    <option value="5">Mei</option>
+                    <option value="6">Juni</option>
+                    <option value="7">Juli</option>
+                    <option value="8">Agustus</option>
+                    <option value="9">September</option>
+                    <option value="10">Oktober</option>
+                    <option value="11">November</option>
+                    <option value="12">Desember</option>
+                </select>
+                
+                <select id="filter-tahun" onchange="App.applyFilters()">
+                    <option value="">Semua Tahun</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026" selected>2026</option>
+                </select>
+                
+                <div class="input-group">
+                    <i class="fa-solid fa-calendar-day input-icon"></i>
+                    <input type="date" id="filter-tanggal-upload" onchange="App.applyFilters()" placeholder="Tanggal Upload">
                 </div>
+                
+                <button class="btn btn-secondary" onclick="App.resetFilters()">
+                    <i class="fa-solid fa-rotate-left"></i> Reset
+                </button>
             </div>
-        </section>
+        </div>
+        
+        <div class="filter-info" id="filter-info">
+            <i class="fa-solid fa-info-circle"></i>
+            <span>Menampilkan semua kegiatan</span>
+        </div>
+    </div>
+    
+    <div id="gallery-skeleton" class="gallery-grid" style="display: none;">
+        <!-- Skeleton loaders -->
+    </div>
+    
+    <div class="gallery-grid" id="gallery-container">
+        <div class="empty-state">
+            <i class="fa-regular fa-folder-open"></i>
+            <p>Klik "Muat Data" untuk melihat kegiatan terbaru.</p>
+        </div>
+    </div>
+</section>
         
         <!-- PAGE 2: LOGIN -->
         <section id="page-login" class="page">
