@@ -392,7 +392,58 @@ const App = {
             });
         });
     },
+// ========== LOGIN SLIDER ==========
+initLoginSlider() {
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.dot');
+    if (slides.length === 0) return;
 
+    let currentIndex = 0;
+    let slideInterval;
+
+    const goToSlide = (index) => {
+        slides.forEach(s => s.classList.remove('active'));
+        dots.forEach(d => d.classList.remove('active'));
+        
+        slides[index].classList.add('active');
+        dots[index].classList.add('active');
+        currentIndex = index;
+    };
+
+    const nextSlide = () => {
+        const next = (currentIndex + 1) % slides.length;
+        goToSlide(next);
+    };
+
+    // Auto slide setiap 5 detik
+    const startSlide = () => {
+        slideInterval = setInterval(nextSlide, 5000);
+    };
+
+    const stopSlide = () => {
+        clearInterval(slideInterval);
+    };
+
+    // Klik dot untuk pindah slide
+    dots.forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+            stopSlide();
+            goToSlide(index);
+            startSlide();
+        });
+    });
+
+    // Mulai slider
+    startSlide();
+
+    // Pause saat user hover (opsional)
+    const visual = document.querySelector('.login-visual');
+    if (visual) {
+        visual.addEventListener('mouseenter', stopSlide);
+        visual.addEventListener('mouseleave', startSlide);
+    }
+},
+    
     // ========== THEME ==========
     initTheme() {
         const saved = localStorage.getItem('theme') || 'light';
