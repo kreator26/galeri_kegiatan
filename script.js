@@ -1,10 +1,13 @@
 /**
  * Galeri Dokumentasi SD Kabupaten Ende
  * Professional Vanilla JS Architecture
+ * Version: 2.0 - Full Features
  */
 
 const App = {
-    // Konfigurasi Firebase
+    // ============================================
+    // 1. KONFIGURASI FIREBASE
+    // ============================================
     config: {
         apiKey: "AIzaSyBYb9zFaKSASEmpQK2NKChv7aj9tSTTGIM",
         authDomain: "galeri-kegiatan-ende.firebaseapp.com",
@@ -14,24 +17,28 @@ const App = {
         appId: "1:1036576141299:web:89d70636e1f91850916c86",
         measurementId: "G-9QTLLP3YC3"
     },
-    
-    // State
+
+    // ============================================
+    // 2. STATE APLIKASI
+    // ============================================
     db: null,
     auth: null,
     storage: null,
     currentUser: null,
     selectedPhotos: [],
+    debounceTimer: null,
 
-    /**
-     * Inisialisasi Aplikasi
-     */
+    // ============================================
+    // 3. INISIALISASI APLIKASI
+    // ============================================
     init() {
+        // Initialize Firebase
         firebase.initializeApp(this.config);
         this.auth = firebase.auth();
         this.db = firebase.firestore();
         this.storage = firebase.storage();
 
-        // Set default date
+        // Set default tanggal hari ini
         document.getElementById('upload-date').valueAsDate = new Date();
 
         // Auth State Listener
@@ -40,23 +47,30 @@ const App = {
             this.updateUIBasedOnAuth();
         });
 
-        console.log("App initialized successfully.");
+        // Load daftar sekolah untuk filter
+        this.loadSchools();
+
+        console.log("✅ Aplikasi Galeri SD Ende berhasil diinisialisasi.");
     },
 
-    /**
-     * Navigasi Halaman
-     */
+    // ============================================
+    // 4. NAVIGASI HALAMAN
+    // ============================================
     navigate(pageId) {
+        // Cek akses upload
         if (pageId === 'upload' && !this.currentUser) {
             this.showToast('Silakan login terlebih dahulu', 'error');
             pageId = 'login';
         }
 
+        // Sembunyikan semua halaman
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-        
+
+        // Tampilkan halaman yang dipilih
         document.getElementById(`page-${pageId}`).classList.add('active');
-        document.getElementById(`nav-${pageId}`).classList.add('active');
+        const navBtn = document.getElementById(`nav-${pageId}`);
+        if (navBtn) navBtn.classList.add('active');
     },
 
     updateUIBasedOnAuth() {
@@ -69,18 +83,18 @@ const App = {
             userArea.style.display = 'flex';
             userEmail.textContent = this.currentUser.email;
             navLogin.style.display = 'none';
-            navUpload.style.display = 'inline-block';
+            navUpload.style.display = 'inline-flex';
         } else {
             userArea.style.display = 'none';
-            navLogin.style.display = 'inline-block';
+            navLogin.style.display = 'inline-flex';
             navUpload.style.display = 'none';
             this.navigate('gallery');
         }
     },
 
-    /**
-     * Authentication
-     */
+    // ============================================
+    // 5. AUTHENTICATION (LOGIN/LOGOUT)
+    // ============================================
     async handleLogin(event) {
         event.preventDefault();
         const email = document.getElementById('login-email').value.trim();
@@ -97,7 +111,7 @@ const App = {
     },
 
     handleLogout() {
-        if(confirm('Apakah Anda yakin ingin keluar?')) {
+        if (confirm('Apakah Anda yakin ingin keluar?')) {
             this.auth.signOut();
             this.showToast('Anda telah keluar.', 'success');
         }
@@ -109,26 +123,67 @@ const App = {
             'auth/user-disabled': 'Akun ini telah dinonaktifkan.',
             'auth/user-not-found': 'Email tidak terdaftar.',
             'auth/wrong-password': 'Password salah.',
-            'auth/too-many-requests': 'Terlalu banyak percobaan. Coba lagi nanti.'
+            'auth/too-many-requests': 'Terlalu banyak percobaan. Coba lagi nanti.',
+            'auth/invalid-credential': 'Email atau password salah.'
         };
         return messages[code] || 'Terjadi kesalahan saat login.';
     },
 
-    /**
-     * Photo Handling & Compression
-     */
+    // ============================================
+    // 6. LOAD DAFTAR SEKOLAH
+    // ============================================
+    async loadSchools() {
+        try {
+            const snapshot = await this.db.collection('schools').orderBy('name').get();
+            const select = document.getElementById('filter-sekolah');
+
+            // Kosongkan opsi kecuali yang pertama
+            select.innerHTML = '<option value="">Semua Sekolah</option>';
+
+            if (snapshot.empty) {
+                // Fallback: sekolah hardcoded jika Firestore kosong
+                const fallbackSchools = [
+                    "SD NEGERI 1 ENDE",
+                    "SD INPRES AEDARI",
+                    "SD KATOLIK ENDE 8"
+                ];
+                fallbackSchools.forEach(school => {
+                    const option = document.createElement('option');
+                    option.value = school;
+                    option.textContent = school;
+                    select.appendChild(option);
+                });
+                console.log("⚠️ Menggunakan daftar sekolah fallback.");
+            } else {
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const option = document.createElement('option');
+                    option.value = data.name;
+                    option.textContent = data.name;
+                    select.appendChild(option);
+                });
+                console.log(`✅ ${snapshot.size} sekolah dimuat dari database.`);
+            }
+        } catch (error) {
+            console.error("❌ Gagal memuat daftar sekolah:", error);
+        }
+    },
+
+    // ============================================
+    // 7. PENANGANAN FOTO & KOMPRESI
+    // ============================================
     async handlePhotoSelect(event) {
         const files = Array.from(event.target.files);
         if (files.length > 5) {
             this.showToast('Maksimal 5 foto per kegiatan!', 'error');
-            event.target.value = ''; // Reset input
+            event.target.value = '';
             return;
         }
-        
+
         const previewContainer = document.getElementById('photo-preview');
         previewContainer.innerHTML = '';
         this.selectedPhotos = [];
-        
+
         this.showToast('Sedang mengompres foto...', 'success');
 
         for (let file of files) {
@@ -139,7 +194,7 @@ const App = {
                     useWebWorker: true
                 });
                 this.selectedPhotos.push(compressedFile);
-                
+
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const div = document.createElement('div');
@@ -166,9 +221,9 @@ const App = {
         button.parentElement.remove();
     },
 
-    /**
-     * Upload Logic
-     */
+    // ============================================
+    // 8. UPLOAD KEGIATAN
+    // ============================================
     async handleUpload(event) {
         event.preventDefault();
         if (!this.currentUser) return;
@@ -198,25 +253,25 @@ const App = {
             return;
         }
 
-        // UI Loading State
+        // Tampilkan overlay loading
         document.getElementById('upload-overlay').style.display = 'flex';
 
         try {
             const photoUrls = [];
             const safeSchoolName = form.school.replace(/\s+/g, '-').toLowerCase();
 
-            // Upload ke Storage
+            // Upload foto ke Firebase Storage
             for (let i = 0; i < this.selectedPhotos.length; i++) {
                 const photo = this.selectedPhotos[i];
                 const fileName = `${safeSchoolName}/${Date.now()}_${i}_${photo.name}`;
                 const storageRef = this.storage.ref(`activities/${fileName}`);
-                
+
                 await storageRef.put(photo);
                 const url = await storageRef.getDownloadURL();
                 photoUrls.push(url);
             }
 
-            // Simpan ke Firestore
+            // Simpan metadata ke Firestore
             await this.db.collection('activities').add({
                 schoolName: form.school,
                 title: form.title,
@@ -231,275 +286,99 @@ const App = {
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            this.showToast('Dokumentasi berhasil diupload!', 'success');
-            
-            // Reset Form
+            this.showToast('✅ Dokumentasi berhasil diupload!', 'success');
+
+            // Reset form
             document.getElementById('upload-form').reset();
             document.getElementById('photo-preview').innerHTML = '';
             this.selectedPhotos = [];
             document.getElementById('upload-date').valueAsDate = new Date();
+
+            // Pindah ke galeri
             this.navigate('gallery');
+            this.loadGalleryWithFilters({});
 
         } catch (error) {
-            console.error("Upload Error:", error);
+            console.error("❌ Upload Error:", error);
             this.showToast('Gagal mengupload: ' + error.message, 'error');
         } finally {
             document.getElementById('upload-overlay').style.display = 'none';
         }
     },
-/**
- * Load Daftar Sekolah dari Firestore
- */
-async loadSchools() {
-    try {
-        const snapshot = await this.db.collection('schools').orderBy('name').get();
-        const select = document.getElementById('filter-sekolah');
-        
-        // Kosongkan opsi kecuali yang pertama
-        select.innerHTML = '<option value="">Semua Sekolah</option>';
-        
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const option = document.createElement('option');
-            option.value = data.name;
-            option.textContent = data.name;
-            select.appendChild(option);
-        });
-        
-        console.log(`${snapshot.size} sekolah dimuat.`);
-    } catch (error) {
-        console.error("Gagal memuat daftar sekolah:", error);
-        // Fallback: tampilkan sekolah hardcoded jika Firestore kosong
-        const fallbackSchools = [
-            "SD NEGERI 1 ENDE",
-            "SD INPRES AEDARI",
-            "SD KATOLIK ENDE 8"
-        ];
-        const select = document.getElementById('filter-sekolah');
-        fallbackSchools.forEach(school => {
-            const option = document.createElement('option');
-            option.value = school;
-            option.textContent = school;
-            select.appendChild(option);
-        });
-    }
-},
 
-/**
- * Debounce untuk search text (delay 500ms)
- */
-debounceTimer: null,
-debounceFilter() {
-    clearTimeout(this.debounceTimer);
-    this.debounceTimer = setTimeout(() => {
+    // ============================================
+    // 9. FILTER & GALERI
+    // ============================================
+    debounceFilter() {
+        clearTimeout(this.debounceTimer);
+        this.debounceTimer = setTimeout(() => {
+            this.applyFilters();
+        }, 500);
+    },
+
+    resetFilters() {
+        document.getElementById('search-text').value = '';
+        document.getElementById('filter-sekolah').value = '';
+        document.getElementById('filter-bulan').value = '';
+        document.getElementById('filter-tahun').value = '2026';
+        document.getElementById('filter-tanggal-upload').value = '';
         this.applyFilters();
-    }, 500);
-},
+        this.showToast('Filter direset', 'success');
+    },
 
-/**
- * Reset Semua Filter
- */
-resetFilters() {
-    document.getElementById('search-text').value = '';
-    document.getElementById('filter-sekolah').value = '';
-    document.getElementById('filter-bulan').value = '';
-    document.getElementById('filter-tahun').value = '2026';
-    document.getElementById('filter-tanggal-upload').value = '';
-    this.applyFilters();
-    this.showToast('Filter direset', 'success');
-},
+    applyFilters() {
+        const searchText = document.getElementById('search-text').value.toLowerCase().trim();
+        const filterSekolah = document.getElementById('filter-sekolah').value;
+        const filterBulan = document.getElementById('filter-bulan').value;
+        const filterTahun = document.getElementById('filter-tahun').value;
+        const filterTanggalUpload = document.getElementById('filter-tanggal-upload').value;
 
-/**
- * Terapkan Semua Filter
- */
-async applyFilters() {
-    const searchText = document.getElementById('search-text').value.toLowerCase().trim();
-    const filterSekolah = document.getElementById('filter-sekolah').value;
-    const filterBulan = document.getElementById('filter-bulan').value;
-    const filterTahun = document.getElementById('filter-tahun').value;
-    const filterTanggalUpload = document.getElementById('filter-tanggal-upload').value;
-    
-    // Update info filter
-    const filterInfo = document.getElementById('filter-info');
-    const activeFilters = [];
-    if (searchText) activeFilters.push(`Pencarian: "${searchText}"`);
-    if (filterSekolah) activeFilters.push(`Sekolah: ${filterSekolah}`);
-    if (filterBulan) activeFilters.push(`Bulan: ${this.getBulanName(filterBulan)}`);
-    if (filterTahun) activeFilters.push(`Tahun: ${filterTahun}`);
-    if (filterTanggalUpload) activeFilters.push(`Tanggal Upload: ${filterTanggalUpload}`);
-    
-    if (activeFilters.length > 0) {
-        filterInfo.innerHTML = `<i class="fa-solid fa-filter"></i><span>Filter aktif: ${activeFilters.join(', ')}</span>`;
-    } else {
-        filterInfo.innerHTML = `<i class="fa-solid fa-info-circle"></i><span>Menampilkan semua kegiatan</span>`;
-    }
-    
-    await this.loadGalleryWithFilters({
-        searchText,
-        filterSekolah,
-        filterBulan,
-        filterTahun,
-        filterTanggalUpload
-    });
-},
+        // Update info filter
+        const filterInfo = document.getElementById('filter-info');
+        const activeFilters = [];
+        if (searchText) activeFilters.push(`Pencarian: "${searchText}"`);
+        if (filterSekolah) activeFilters.push(`Sekolah: ${filterSekolah}`);
+        if (filterBulan) activeFilters.push(`Bulan: ${this.getBulanName(filterBulan)}`);
+        if (filterTahun) activeFilters.push(`Tahun: ${filterTahun}`);
+        if (filterTanggalUpload) activeFilters.push(`Tanggal Upload: ${filterTanggalUpload}`);
 
-/**
- * Konversi Nomor Bulan ke Nama
- */
-getBulanName(bulanNum) {
-    const bulanNames = {
-        '1': 'Januari', '2': 'Februari', '3': 'Maret', '4': 'April',
-        '5': 'Mei', '6': 'Juni', '7': 'Juli', '8': 'Agustus',
-        '9': 'September', '10': 'Oktober', '11': 'November', '12': 'Desember'
-    };
-    return bulanNames[bulanNum] || '';
-},
-
-/**
- * Load Gallery dengan Filter
- */
-async loadGalleryWithFilters(filters = {}) {
-    const container = document.getElementById('gallery-container');
-    const skeleton = document.getElementById('gallery-skeleton');
-    
-    container.innerHTML = '';
-    skeleton.style.display = 'grid';
-    skeleton.innerHTML = Array(6).fill('<div class="skeleton skeleton-card"></div>').join('');
-
-    try {
-        // Query dasar: ambil 100 data terbaru
-        let query = this.db.collection('activities')
-            .orderBy('createdAt', 'desc')
-            .limit(100);
-        
-        const snapshot = await query.get();
-        skeleton.style.display = 'none';
-
-        if (snapshot.empty) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa-regular fa-folder-open"></i>
-                    <p>Belum ada data kegiatan.</p>
-                </div>`;
-            return;
+        if (activeFilters.length > 0) {
+            filterInfo.innerHTML = `<i class="fa-solid fa-filter"></i><span>Filter aktif: ${activeFilters.join(', ')}</span>`;
+        } else {
+            filterInfo.innerHTML = `<i class="fa-solid fa-info-circle"></i><span>Menampilkan semua kegiatan</span>`;
         }
 
-        let filteredDocs = [];
-
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            let pass = true;
-
-            // Filter 1: Search Text (judul atau deskripsi)
-            if (filters.searchText) {
-                const title = (data.title || '').toLowerCase();
-                const desc = (data.description || '').toLowerCase();
-                if (!title.includes(filters.searchText) && !desc.includes(filters.searchText)) {
-                    pass = false;
-                }
-            }
-
-            // Filter 2: Nama Sekolah
-            if (filters.filterSekolah && data.schoolName !== filters.filterSekolah) {
-                pass = false;
-            }
-
-            // Filter 3 & 4: Bulan dan Tahun (dari field 'date' tanggal kegiatan)
-            if (filters.filterBulan || filters.filterTahun) {
-                if (data.date) {
-                    const dateObj = new Date(data.date);
-                    const docBulan = (dateObj.getMonth() + 1).toString();
-                    const docTahun = dateObj.getFullYear().toString();
-                    
-                    if (filters.filterBulan && docBulan !== filters.filterBulan) {
-                        pass = false;
-                    }
-                    if (filters.filterTahun && docTahun !== filters.filterTahun) {
-                        pass = false;
-                    }
-                } else {
-                    pass = false;
-                }
-            }
-
-            // Filter 5: Tanggal Upload (dari field 'createdAt')
-            if (filters.filterTanggalUpload && data.createdAt) {
-                const uploadDate = data.createdAt.toDate();
-                const uploadDateStr = uploadDate.toISOString().split('T')[0];
-                if (uploadDateStr !== filters.filterTanggalUpload) {
-                    pass = false;
-                }
-            }
-
-            if (pass) {
-                filteredDocs.push({ id: doc.id, data });
-            }
+        this.loadGalleryWithFilters({
+            searchText,
+            filterSekolah,
+            filterBulan,
+            filterTahun,
+            filterTanggalUpload
         });
+    },
 
-        // Tampilkan hasil
-        if (filteredDocs.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <p>Tidak ada kegiatan yang cocok dengan filter.</p>
-                </div>`;
-            return;
-        }
+    getBulanName(bulanNum) {
+        const bulanNames = {
+            '1': 'Januari', '2': 'Februari', '3': 'Maret', '4': 'April',
+            '5': 'Mei', '6': 'Juni', '7': 'Juli', '8': 'Agustus',
+            '9': 'September', '10': 'Oktober', '11': 'November', '12': 'Desember'
+        };
+        return bulanNames[bulanNum] || '';
+    },
 
-        filteredDocs.forEach(doc => {
-            const data = doc.data;
-            const thumb = data.photos[0];
-            const dateStr = data.date ? new Date(data.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
-            
-            const card = document.createElement('div');
-            card.className = 'gallery-card';
-            card.innerHTML = `
-                <img src="${thumb}" alt="${data.title}" loading="lazy">
-                <div class="gallery-content">
-                    <h4>${data.title}</h4>
-                    <p style="color: var(--primary); font-weight: 600; font-size: 0.9rem;">${data.schoolName}</p>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
-                        <i class="fa-regular fa-calendar"></i> ${dateStr}
-                    </p>
-                    ${data.youtubeId ? `<p style="margin-top: 0.5rem;"><a href="https://youtu.be/${data.youtubeId}" target="_blank" style="color: var(--danger); text-decoration: none;"><i class="fa-brands fa-youtube"></i> Tonton Video</a></p>` : ''}
-                    <div class="gallery-meta">
-                        <span class="badge">${data.category}</span>
-                    </div>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-
-        this.showToast(`Ditemukan ${filteredDocs.length} kegiatan`, 'success');
-
-    } catch (error) {
-        console.error("Filter Error:", error);
-        skeleton.style.display = 'none';
-        container.innerHTML = `
-            <div class="empty-state" style="color: var(--danger);">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                <p>Gagal memuat data. Periksa koneksi internet Anda.</p>
-            </div>`;
-    }
-},
-
-    /**
-     * Gallery Logic
-     */
-        async loadGallery() {
+    async loadGalleryWithFilters(filters = {}) {
         const container = document.getElementById('gallery-container');
         const skeleton = document.getElementById('gallery-skeleton');
-        
+
         container.innerHTML = '';
         skeleton.style.display = 'grid';
-        
-        // Generate skeleton items
         skeleton.innerHTML = Array(6).fill('<div class="skeleton skeleton-card"></div>').join('');
 
         try {
+            // Query dasar: ambil 100 data terbaru
             const snapshot = await this.db.collection('activities')
                 .orderBy('createdAt', 'desc')
-                .limit(20)
+                .limit(100)
                 .get();
 
             skeleton.style.display = 'none';
@@ -513,14 +392,75 @@ async loadGalleryWithFilters(filters = {}) {
                 return;
             }
 
+            let filteredDocs = [];
+
             snapshot.forEach(doc => {
                 const data = doc.data();
+                let pass = true;
+
+                // Filter 1: Search Text (judul atau deskripsi)
+                if (filters.searchText) {
+                    const title = (data.title || '').toLowerCase();
+                    const desc = (data.description || '').toLowerCase();
+                    if (!title.includes(filters.searchText) && !desc.includes(filters.searchText)) {
+                        pass = false;
+                    }
+                }
+
+                // Filter 2: Nama Sekolah
+                if (filters.filterSekolah && data.schoolName !== filters.filterSekolah) {
+                    pass = false;
+                }
+
+                // Filter 3 & 4: Bulan dan Tahun (dari field 'date')
+                if (filters.filterBulan || filters.filterTahun) {
+                    if (data.date) {
+                        const dateObj = new Date(data.date);
+                        const docBulan = (dateObj.getMonth() + 1).toString();
+                        const docTahun = dateObj.getFullYear().toString();
+
+                        if (filters.filterBulan && docBulan !== filters.filterBulan) {
+                            pass = false;
+                        }
+                        if (filters.filterTahun && docTahun !== filters.filterTahun) {
+                            pass = false;
+                        }
+                    } else {
+                        pass = false;
+                    }
+                }
+
+                // Filter 5: Tanggal Upload (dari field 'createdAt')
+                if (filters.filterTanggalUpload && data.createdAt) {
+                    const uploadDate = data.createdAt.toDate();
+                    const uploadDateStr = uploadDate.toISOString().split('T')[0];
+                    if (uploadDateStr !== filters.filterTanggalUpload) {
+                        pass = false;
+                    }
+                }
+
+                if (pass) {
+                    filteredDocs.push({ id: doc.id, data });
+                }
+            });
+
+            // Tampilkan hasil
+            if (filteredDocs.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <p>Tidak ada kegiatan yang cocok dengan filter.</p>
+                    </div>`;
+                return;
+            }
+
+            filteredDocs.forEach(doc => {
+                const data = doc.data;
                 const thumb = data.photos[0];
                 const dateStr = data.date ? new Date(data.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
-                
+
                 const card = document.createElement('div');
                 card.className = 'gallery-card';
-                // PERBAIKAN: Menambahkan tanda '>' yang hilang di sini
                 card.innerHTML = `
                     <img src="${thumb}" alt="${data.title}" loading="lazy">
                     <div class="gallery-content">
@@ -537,28 +477,37 @@ async loadGalleryWithFilters(filters = {}) {
                 `;
                 container.appendChild(card);
             });
+
+            this.showToast(`Ditemukan ${filteredDocs.length} kegiatan`, 'success');
+
         } catch (error) {
-            console.error("Gallery Error:", error);
+            console.error("❌ Filter Error:", error);
             skeleton.style.display = 'none';
             container.innerHTML = `
                 <div class="empty-state" style="color: var(--danger);">
                     <i class="fa-solid fa-triangle-exclamation"></i>
-                    <p>Gagal memuat data. Periksa koneksi internet Anda.</p>
+                    <p>Gagal memuat data: ${error.message}</p>
                 </div>`;
         }
     },
-    
-    /**
-     * Utility: Toast Notification
-     */
+
+    // Alias untuk tombol "Muat Data"
+    async loadGallery() {
+        await this.loadGalleryWithFilters({});
+    },
+
+    // ============================================
+    // 10. UTILITY: TOAST NOTIFICATION
+    // ============================================
     showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-        
-        const icon = type === 'success' ? '<i class="fa-solid fa-circle-check" style="color: var(--success);"></i>' 
-                                        : '<i class="fa-solid fa-circle-xmark" style="color: var(--danger);"></i>';
-        
+
+        const icon = type === 'success'
+            ? '<i class="fa-solid fa-circle-check" style="color: var(--success);"></i>'
+            : '<i class="fa-solid fa-circle-xmark" style="color: var(--danger);"></i>';
+
         toast.innerHTML = `${icon} <span>${message}</span>`;
         container.appendChild(toast);
 
@@ -571,7 +520,9 @@ async loadGalleryWithFilters(filters = {}) {
     }
 };
 
-// Start App
+// ============================================
+// START APLIKASI
+// ============================================
 document.addEventListener('DOMContentLoaded', () => {
     App.init();
 });
