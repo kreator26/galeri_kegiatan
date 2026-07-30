@@ -5,39 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Galeri Dokumentasi SD Kabupaten Ende</title>
     
-    <!-- Link ke file CSS eksternal -->
+    <!-- Modern Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons: FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
     
-    <!-- Firebase SDK (Compat version) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     
-    <!-- Library Kompresi Foto -->
+    <!-- Image Compression -->
     <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
 </head>
 <body>
-    <div class="header">
-        <h1>📚 Galeri Dokumentasi SD Kabupaten Ende</h1>
-        <p>Arsip Digital Kegiatan Sekolah Se-Kabupaten Ende</p>
-        <p id="user-info" class="user-info-text"></p>
-    </div>
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-area">
+                <i class="fa-solid fa-school"></i>
+                <div>
+                    <h1>Galeri Dokumentasi</h1>
+                    <p>SD Kabupaten Ende</p>
+                </div>
+            </div>
+            <div class="user-area" id="user-area" style="display: none;">
+                <span id="user-email"></span>
+                <button onclick="App.handleLogout()" class="btn btn-sm btn-danger"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
+            </div>
+        </div>
+    </header>
     
-    <div class="nav">
-        <button onclick="showPage('gallery')" class="active" id="btn-gallery">🏠 Galeri</button>
-        <button onclick="showPage('login')" id="btn-login">🔐 Login</button>
-        <button onclick="showPage('upload')" id="btn-upload">📤 Upload Kegiatan</button>
-        <button onclick="handleLogout()" id="btn-logout" style="display:none; background: #e53e3e;">🚪 Logout</button>
-    </div>
+    <!-- Navigation -->
+    <nav class="nav">
+        <button onclick="App.navigate('gallery')" class="active" id="nav-gallery"><i class="fa-solid fa-images"></i> Galeri</button>
+        <button onclick="App.navigate('login')" id="nav-login"><i class="fa-solid fa-right-to-bracket"></i> Login Operator</button>
+        <button onclick="App.navigate('upload')" id="nav-upload"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Kegiatan</button>
+    </nav>
     
-    <div class="container">
-        <!-- PAGE 1: GALERI PUBLIK -->
-        <div id="page-gallery" class="page active">
-            <div class="filter-section">
-                <h3>🔍 Filter Kegiatan</h3>
+    <main class="container">
+        <!-- PAGE 1: GALERI -->
+        <section id="page-gallery" class="page active">
+            <div class="card filter-card">
+                <h3><i class="fa-solid fa-filter"></i> Filter Kegiatan</h3>
                 <div class="filter-grid">
-                    <input type="text" id="search-school" placeholder="Cari nama sekolah...">
+                    <div class="input-group">
+                        <i class="fa-solid fa-search input-icon"></i>
+                        <input type="text" id="search-school" placeholder="Cari nama sekolah...">
+                    </div>
                     <select id="filter-kategori">
                         <option value="">Semua Kategori</option>
                         <option value="Upacara">Upacara</option>
@@ -46,101 +71,125 @@
                         <option value="Ekstrakurikuler">Ekstrakurikuler</option>
                         <option value="Sarpras">Sarana Prasarana</option>
                     </select>
-                    <button class="btn btn-primary" onclick="loadGallery()">🔄 Muat Data</button>
+                    <button class="btn btn-primary" onclick="App.loadGallery()">Muat Data</button>
                 </div>
             </div>
-            <div class="loading" id="gallery-loading">
-                <div class="spinner"></div>
-                <p>Memuat data kegiatan...</p>
+            
+            <div id="gallery-skeleton" class="gallery-grid" style="display: none;">
+                <!-- Skeleton loaders will be injected here -->
             </div>
+            
             <div class="gallery-grid" id="gallery-container">
-                <p class="empty-state">Klik "Muat Data" untuk melihat kegiatan terbaru.</p>
+                <div class="empty-state">
+                    <i class="fa-regular fa-folder-open"></i>
+                    <p>Klik "Muat Data" untuk melihat kegiatan terbaru.</p>
+                </div>
             </div>
-        </div>
+        </section>
         
         <!-- PAGE 2: LOGIN -->
-        <div id="page-login" class="page">
-            <div class="form-container">
-                <h2>🔐 Login Operator Sekolah</h2>
-                <div id="login-alert"></div>
-                <form id="login-form" onsubmit="handleLogin(event)">
+        <section id="page-login" class="page">
+            <div class="card form-card">
+                <div class="form-header">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <h2>Login Operator</h2>
+                    <p>Silakan masuk untuk mengupload dokumentasi.</p>
+                </div>
+                <form id="login-form" onsubmit="App.handleLogin(event)">
                     <div class="form-group">
-                        <label>Email Operator</label>
-                        <input type="email" id="login-email" required placeholder="operator@sekolah.sch.id">
+                        <label>Email</label>
+                        <input type="email" id="login-email" required placeholder="nama@sekolah.sch.id">
                     </div>
                     <div class="form-group">
                         <label>Password</label>
-                        <input type="password" id="login-password" required placeholder="Masukkan password">
+                        <input type="password" id="login-password" required placeholder="••••••••">
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                    <button type="submit" class="btn btn-primary btn-block">Masuk</button>
                 </form>
             </div>
-        </div>
+        </section>
         
-        <!-- PAGE 3: UPLOAD KEGIATAN -->
-        <div id="page-upload" class="page">
-            <div class="form-container form-container-wide">
-                <h2>📤 Upload Kegiatan Sekolah</h2>
-                <div id="upload-alert"></div>
-                <div class="loading" id="upload-loading">
-                    <div class="spinner"></div>
-                    <p>Sedang mengupload, mohon tunggu...</p>
+        <!-- PAGE 3: UPLOAD -->
+        <section id="page-upload" class="page">
+            <div class="card form-card-wide">
+                <div class="form-header">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <h2>Upload Kegiatan Baru</h2>
                 </div>
                 
-                <form id="upload-form" onsubmit="handleUpload(event)">
-                    <div class="form-group">
-                        <label>Nama Sekolah</label>
-                        <select id="upload-school" required>
-                            <option value="">-- Pilih Sekolah --</option>
-                            <option value="SD NEGERI 1 ENDE">SD NEGERI 1 ENDE</option>
-                            <option value="SD INPRES AEDARI">SD INPRES AEDARI</option>
-                            <option value="SD KATOLIK ENDE 8">SD KATOLIK ENDE 8</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Judul Kegiatan</label>
-                        <input type="text" id="upload-title" required placeholder="Contoh: Upacara Bendera">
-                    </div>
-                    <div class="form-group">
-                        <label>Tanggal Kegiatan</label>
-                        <input type="date" id="upload-date" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Kategori</label>
-                        <select id="upload-category" required>
-                            <option value="">-- Pilih Kategori --</option>
-                            <option value="Upacara">Upacara</option>
-                            <option value="Lomba">Lomba</option>
-                            <option value="PBM">Kegiatan Belajar</option>
-                            <option value="Ekstrakurikuler">Ekstrakurikuler</option>
-                            <option value="Sarpras">Sarana Prasarana</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Deskripsi Kegiatan</label>
-                        <textarea id="upload-description" placeholder="Jelaskan kegiatan secara singkat..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Upload Foto (Maks. 5 foto, otomatis dikompres)</label>
-                        <div class="upload-area" onclick="document.getElementById('upload-photos').click()">
-                            <div style="font-size: 48px;">📷</div>
-                            <p>Klik untuk pilih foto</p>
-                            <p class="hint-text">Format: JPG, PNG | Maksimal 5MB per foto</p>
+                <div id="upload-overlay" class="upload-overlay" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Sedang memproses dan mengupload data...</p>
+                </div>
+
+                <form id="upload-form" onsubmit="App.handleUpload(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nama Sekolah <span class="required">*</span></label>
+                            <select id="upload-school" required>
+                                <option value="">-- Pilih Sekolah --</option>
+                                <option value="SD NEGERI 1 ENDE">SD NEGERI 1 ENDE</option>
+                                <option value="SD INPRES AEDARI">SD INPRES AEDARI</option>
+                                <option value="SD KATOLIK ENDE 8">SD KATOLIK ENDE 8</option>
+                            </select>
                         </div>
-                        <input type="file" id="upload-photos" multiple accept="image/*" style="display: none;" onchange="handlePhotoSelect(event)">
+                        <div class="form-group">
+                            <label>Kategori <span class="required">*</span></label>
+                            <select id="upload-category" required>
+                                <option value="">-- Pilih --</option>
+                                <option value="Upacara">Upacara</option>
+                                <option value="Lomba">Lomba</option>
+                                <option value="PBM">Kegiatan Belajar</option>
+                                <option value="Ekstrakurikuler">Ekstrakurikuler</option>
+                                <option value="Sarpras">Sarana Prasarana</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Judul Kegiatan <span class="required">*</span></label>
+                        <input type="text" id="upload-title" required placeholder="Contoh: Upacara Bendera HUT RI">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Tanggal <span class="required">*</span></label>
+                            <input type="date" id="upload-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Link YouTube (Opsional)</label>
+                            <input type="url" id="upload-youtube" placeholder="https://youtu.be/...">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Deskripsi</label>
+                        <textarea id="upload-description" rows="3" placeholder="Jelaskan kegiatan secara singkat..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Foto Dokumentasi <span class="required">*</span> <span class="hint">(Maks. 5 foto, otomatis dikompres)</span></label>
+                        <div class="upload-area" onclick="document.getElementById('upload-photos').click()">
+                            <i class="fa-solid fa-camera"></i>
+                            <p>Klik untuk memilih foto</p>
+                            <span class="hint">JPG, PNG, WEBP (Maks. 5MB/foto)</span>
+                        </div>
+                        <input type="file" id="upload-photos" multiple accept="image/*" style="display: none;" onchange="App.handlePhotoSelect(event)">
                         <div class="preview-grid" id="photo-preview"></div>
                     </div>
-                    <div class="form-group">
-                        <label>Link Video YouTube (Opsional)</label>
-                        <input type="url" id="upload-youtube" placeholder="https://youtu.be/xxxxx">
-                    </div>
-                    <button type="submit" class="btn btn-success" style="width: 100%;">📤 Upload Kegiatan</button>
+
+                    <button type="submit" class="btn btn-success btn-block">
+                        <i class="fa-solid fa-paper-plane"></i> Kirim Dokumentasi
+                    </button>
                 </form>
             </div>
-        </div>
-    </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 Dinas Pendidikan Kabupaten Ende. Hak Cipta Dilindungi.</p>
+    </footer>
     
-    <!-- Link ke file JavaScript eksternal -->
     <script src="script.js"></script>
 </body>
 </html>
